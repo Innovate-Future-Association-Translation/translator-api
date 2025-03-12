@@ -21,3 +21,4 @@ PORT=8000
 DATABASE_URL=mongodb://127.0.0.1:27017/ifa-database
 API_PREFIX=/api/v1
 SWAGGER_DOC_PATH=/api-docs
+JWT_SECRET=aQuickBrownFoxJumpAwayALazyDog
