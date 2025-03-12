@@ -1,2 +1,2 @@
-import init from "./app/loaders";
+import init from "../translator-api/src/loaders"
 init();
