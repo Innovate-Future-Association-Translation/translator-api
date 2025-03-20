@@ -24,7 +24,6 @@ const validateBody = (schema: ZodSchema) => {
       err.status = ClientErrorStatus.NOT_ACCEPTABLE;
       err.details = validationErrorDetail;
 
-      // Pass the error to the next middleware (error handler)
       next(err);
     }
   };

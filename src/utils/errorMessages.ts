@@ -22,6 +22,10 @@ export enum authErrorMessages{
   MISSING_REGISTRATION_FIELD =  "Required registration fields are missing.",
   VALIDATION_FAIL = "fail the authtication format please see the details" ,
   DUPLICATION_EMAIL =  "this email has been registered",
-  UNKNOWN_ERROR = "registration fail due to unknown reason"
-  
+  UNKNOWN_ERROR = "registration fail due to unknown reason",
+  JWT_SECRET_NOT_SET = "JWT secret not set, please check JWT_SECRET environment variable",
+  JWT_TOKEN_GENERATION_ERROR = "Error generating login token",
+  JWT_CONFIG_ERROR = "JWT configuration error",
+  USERNAME_ALREADY_TAKEN = "Username already taken",
+  USER_NOT_FOUND = "User not found"
 }

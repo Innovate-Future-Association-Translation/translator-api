@@ -8,6 +8,7 @@ import morgan from "morgan";
 import helmet from "helmet";
 import cors from "cors";
 import errorHandler from "../middlewares/ErrorHandler";
+import { authErrorMessages } from "../utils/errorMessages";
 
 const swaggerSpec = swaggerJSDoc(swaggerOptions);
 
@@ -26,6 +27,11 @@ const startServer = () => {
   );
 
   app.use(errorHandler);
+
+  // Basic JWT config check
+  if (!config.jwtSecret) {
+    console.warn(authErrorMessages.JWT_CONFIG_ERROR);
+  }
 
   const server = app.listen(config.port, () => {
     console.log("SERVER STARTED:", config.port);

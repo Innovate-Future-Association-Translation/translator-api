@@ -2,9 +2,11 @@ import { User, IUser } from "../models/User";
 import { NextFunction, Request, Response } from "express";
 import { ErrorWithStatus } from "../middlewares/ErrorHandler";
 import { ClientErrorStatus } from "../utils/errorStatusCode";
-import authServices from "../services/user/auth.service";
+import authServices from "../services/auth.service";
+import { updateProfile } from "../services/user.service";
 import { authErrorMessages } from "../utils/errorMessages";
 import { authSuccessMessage } from "../utils/successMessage";
+import { userProfileMessage } from "../utils/userProfileMessame";
 
 export const getUsers = async (
   req: Request,
@@ -82,4 +84,73 @@ export const loginController = async (
   }
 };
 
-export default { getUsers, registerController, loginController };
+export const updateProfileController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const userId = req.user?.id;
+    
+    if (!userId) {
+      const error: ErrorWithStatus = new Error(authErrorMessages.UNAUTHORIZED_ACCESS);
+      error.status = ClientErrorStatus.UNAUTHORIZED;
+      return next(error);
+    }
+
+    const { name, language, mobile, selfDescription } = req.body;
+    
+    if (!language) {
+      const error: ErrorWithStatus = new Error(authErrorMessages.MISSING_REGISTRATION_FIELD);
+      error.status = ClientErrorStatus.BAD_REQUEST;
+      return next(error);
+    }
+    
+    // make sure updated data is useful
+    if (name && name.trim() === '') {
+      const error: ErrorWithStatus = new Error(authErrorMessages.MISSING_REGISTRATION_FIELD);
+      error.status = ClientErrorStatus.BAD_REQUEST;
+      return next(error);
+    }
+    
+    if (mobile && mobile.trim() === '') {
+      const error: ErrorWithStatus = new Error(authErrorMessages.MISSING_REGISTRATION_FIELD);
+      error.status = ClientErrorStatus.BAD_REQUEST;
+      return next(error);
+    }
+    
+    if (selfDescription && selfDescription.trim() === '') {
+      const error: ErrorWithStatus = new Error(authErrorMessages.MISSING_REGISTRATION_FIELD);
+      error.status = ClientErrorStatus.BAD_REQUEST;
+      return next(error);
+    }
+
+    const updatedUser = await updateProfile(userId, {
+      name,
+      language,
+      mobile,
+      selfDescription
+    });
+
+    if (!updatedUser) {
+      const error: ErrorWithStatus = new Error(userProfileMessage.UPDATE_PROFILE_NOT_FOUND);
+      error.status = ClientErrorStatus.NOT_FOUND;
+      return next(error);
+    }
+
+    res.status(200).json({
+      message: userProfileMessage.UPDATE_PROFILE_SUCCESS,
+      user: {
+        name: updatedUser.name,
+        email: updatedUser.email,
+        language: updatedUser.language,
+        mobile: updatedUser.mobile,
+        selfDescription: updatedUser.selfDescription
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export default { getUsers, registerController, loginController, updateProfileController };
