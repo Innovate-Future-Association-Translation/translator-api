@@ -1,6 +1,6 @@
 import mongoose, { Schema, Document, Model } from "mongoose";
 import bcrypt from "bcrypt";
-import { findByCredential, generateLoginToken } from "../services/user/user.service"
+import { findByCredential, generateLoginToken } from "../services/user.service"
 
 interface IUser extends Document {
   name: string;
@@ -21,6 +21,7 @@ const UserSchema = new Schema<IUser>({
 });
 interface IUserModel extends Model<IUser> {
   findByCredential(email: string, password: string): Promise<IUser | null>;
+  updateProfile(name: string, email: string, password: string, mobile: string, language: string, selfDescription: string): Promise<IUser | null>;
 }
 
 UserSchema.methods.generateLoginToken = generateLoginToken;

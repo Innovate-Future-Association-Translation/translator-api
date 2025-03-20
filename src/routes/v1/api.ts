@@ -3,9 +3,11 @@ import {
   getUsers,
   registerController,
   loginController,
+  updateProfileController
 } from "../../controllers/user.controller";
 import validateBody from "../../middlewares/validation/auth.validation";
 import authValidationSchema from "../../validator/auth/authSchema";
+import authMiddleware from "../../middlewares/JWT/auth.middleware";
 
 const router = express.Router();
 
@@ -270,6 +272,196 @@ const router = express.Router();
  *                   items:
  *                     type: string
  *                   example: ["Email must match a valid format", "Password in wrong format"]
+ *
+ * /users/update:
+ *   patch:
+ *     summary: Update user profile
+ *     description: This endpoint allows users to update their profile information.
+ *     tags:
+ *       - User Profile
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - language
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 description: The user's name (optional, must be unique)
+ *                 minLength: 3
+ *                 maxLength: 50
+ *               language:
+ *                 type: string
+ *                 description: The user's language preference (required)
+ *                 enum: [en, fr, es, de, zh, it, pt, ru, ja, ko, ar, hi, tr, pl, nl, sv, no, fi, da, cs, ro, el, th, id, ms]
+ *               mobile:
+ *                 type: string
+ *                 description: The user's mobile number (optional, must follow Australian format)
+ *                 pattern: "^(?:\\+61|0)4\\d{8}$"
+ *               selfDescription:
+ *                 type: string
+ *                 description: The user's personal description (optional)
+ *                 maxLength: 200
+ *     responses:
+ *       200:
+ *         description: Profile updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Profile updated successfully"
+ *                 user:
+ *                   type: object
+ *                   properties:
+ *                     name:
+ *                       type: string
+ *                       example: "John Doe"
+ *                     email:
+ *                       type: string
+ *                       example: "john@example.com"
+ *                     language:
+ *                       type: string
+ *                       example: "en"
+ *                     mobile:
+ *                       type: string
+ *                       example: "+61412345678"
+ *                     selfDescription:
+ *                       type: string
+ *                       example: "Software developer based in Sydney"
+ *       400:
+ *         description: Bad Request - Invalid or missing required fields
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 status:
+ *                   type: integer
+ *                   example: 400
+ *                 message:
+ *                   type: string
+ *                   example: "Language field is required"
+ *                 details:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *                   example: ["Language field is required"]
+ *       401:
+ *         description: Unauthorized - Missing or invalid authentication token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 status:
+ *                   type: integer
+ *                   example: 401
+ *                 message:
+ *                   type: string
+ *                   example: "Authentication token is missing or invalid"
+ *                 details:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *                   example: []
+ *       404:
+ *         description: Not Found - User not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 status:
+ *                   type: integer
+ *                   example: 404
+ *                 message:
+ *                   type: string
+ *                   example: "Profile not found"
+ *                 details:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *                   example: []
+ *       406:
+ *         description: Not Acceptable - Invalid data format
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 status:
+ *                   type: integer
+ *                   example: 406
+ *                 message:
+ *                   type: string
+ *                   example: "Invalid data format"
+ *                 details:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *                   example: ["Mobile must match Australia standard", "Name must be at least 3 characters long"]
+ *       409:
+ *         description: Conflict - Username already taken
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 status:
+ *                   type: integer
+ *                   example: 409
+ *                 message:
+ *                   type: string
+ *                   example: "Username already taken"
+ *                 details:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *                   example: []
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 status:
+ *                   type: integer
+ *                   example: 500
+ *                 message:
+ *                   type: string
+ *                   example: "Internal Server Error"
+ *                 details:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *                   example: ["Unexpected server issue."]
  */
 
 router.get("/users", getUsers);
@@ -284,6 +476,13 @@ router.post(
   "/users/login",
   validateBody(authValidationSchema.login),
   loginController
+);
+
+router.patch(
+  "/users/update",
+  authMiddleware,
+  validateBody(authValidationSchema.update),
+  updateProfileController
 );
 
 export default router;

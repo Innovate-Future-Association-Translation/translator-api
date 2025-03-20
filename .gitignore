@@ -15,4 +15,6 @@ resources/.arch-internal-preview.css
 node_modules
 .env
 note.txt
+.DS_Store
+.idea
 
