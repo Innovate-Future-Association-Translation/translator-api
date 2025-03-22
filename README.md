@@ -18,7 +18,20 @@ Create a `.env` file in the project root (do not commit this file to version con
 
 ```env
 PORT=8000
-DATABASE_URL=mongodb://127.0.0.1:27017/ifa-database
+DATABASE_URL=<replace this url by valid mogodb url>
 API_PREFIX=/api/v1
 SWAGGER_DOC_PATH=/api-docs
 JWT_SECRET=aQuickBrownFoxJumpAwayALazyDog
+
+
+##### Execute Your Project
+- npm install
+- npm run dev
+  -- if there is package have not been installed in the project, follow terminal to complete the installation
+- if you see Server and database initialized successfully the server was started.
+
+
+
+###### Swagger API DOC URL
+-Once you launch your project successfully, you are about the read and execute this swagger api document
+ [Swagger API Docs](http://localhost:8000/api-docs)

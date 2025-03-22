@@ -13,7 +13,7 @@ const connectDB = async (): Promise<Connection> => {
     const connection = await mongoose.connect(dbUrl, {
       serverSelectionTimeoutMS: 30000,
     });
-    console.log(`Database connected to ${dbUrl}`);
+    console.log("Database connection established successfully.");
     return connection.connection;
   } catch (error) {
     throw new Error(DatabaseErrorMessage.FAIL_TO_CONNECT_DATABASE);
