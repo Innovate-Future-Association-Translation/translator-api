@@ -54,6 +54,10 @@ export const updateProfile = async (userID: string, updateData: {
   selfDescription?: string;
 }): Promise<IUser | null> => {
   try {
+    if (updateData.language !== undefined && updateData.language === '') {
+      throw new Error(authErrorMessages.MISSING_REGISTRATION_FIELD);
+    }
+    
     if (updateData.name) {
       const existingUser = await User.findOne({ name: updateData.name, _id: { $ne: userID } });
       if (existingUser) {
@@ -61,17 +65,17 @@ export const updateProfile = async (userID: string, updateData: {
       }
     }
     
-    const updateuser = await User.findByIdAndUpdate(
+    const updatedUser = await User.findByIdAndUpdate(
       userID,
       updateData,
       { new: true }
     );
     
-    if (!updateuser) {
+    if (!updatedUser) {
       throw new Error(authErrorMessages.USER_NOT_FOUND);
     }
     
-    return updateuser;
+    return updatedUser;
   } catch (error) {
     console.error("Error updating profile:", error);
     throw error;
