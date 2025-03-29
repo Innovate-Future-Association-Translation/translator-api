@@ -1,15 +1,20 @@
-import express from "express";
+import express, { NextFunction } from "express";
+import { Request, Response, Router } from "express";
 import {
   getUsers,
   registerController,
   loginController,
-  updateProfileController
+  updateProfileController,
+  getUserProfileController,
 } from "../../controllers/user.controller";
 import validateBody from "../../middlewares/validation/auth.validation";
 import authValidationSchema from "../../validator/auth/authSchema";
 import authMiddleware from "../../middlewares/JWT/auth.middleware";
-
+import passport from "../../middlewares/thirdPartyAuth/passport";
+import { IUser } from "../../models/User";
+import config from "../../config";
 const router = express.Router();
+import { authErrorMessages } from "../../utils/errorMessages";
 
 /**
  * @swagger
@@ -50,7 +55,7 @@ const router = express.Router();
  *         - email
  *         - password
  *         - language
- *   
+ *
  * /users:
  *   get:
  *     summary: Retrieve the users list
@@ -75,7 +80,7 @@ const router = express.Router();
  *                 language: "zn"
  *       500:
  *         description: Internal server error.
- *   
+ *
  * /users/register:
  *   post:
  *     summary: Register a new user
@@ -484,5 +489,41 @@ router.patch(
   validateBody(authValidationSchema.update),
   updateProfileController
 );
+
+router.get("/users/profile", authMiddleware, getUserProfileController);
+
+//frontend need to trigger this at the begin to trigger google login page
+router.get(
+  "/users/googleAuth",
+  passport.authenticate("google", { scope: ["profile", "email"] })
+);
+
+//if login successful trigger redirect , if login fail trigger route /loginFail
+router.get(
+  "/users/googleAuth/callback",
+  passport.authenticate("google", {
+    failureRedirect: `${config.api.prefix}/users/loginFail`,
+  }),
+  async (req: Request, res: Response) => {
+    if (!req.user || !req.user.id) {
+      return res.redirect(`${config.api.prefix}/users/loginFail`);
+    }
+    try {
+      const user = req.user as IUser;
+      const token: string = user.generateLoginToken();
+      res.redirect(`${config.loginCallBackURL}?token=${token}`);
+    } catch (error) {
+      console.error("Google auth fail:", error);
+      res.redirect(`${config.api.prefix}/users/loginFail`);
+    }
+  }
+);
+
+//NOTE!!!: all auth error will be redirect to this route temporary including login/signup failure
+//do error handling in front end
+router.get("/users/loginFail", (req: Request, res: Response) => {
+
+  res.redirect(`${config.loginCallBackURL}/?authError=${true}`);
+});
 
 export default router;

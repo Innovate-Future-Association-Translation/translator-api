@@ -84,6 +84,45 @@ export const loginController = async (
   }
 };
 
+
+
+export const getUserProfileController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  
+  try {
+    if (!req.user || !req.user.id) {
+      const error: ErrorWithStatus = new Error(authErrorMessages.UNAUTHORIZED_ACCESS);
+      error.status = ClientErrorStatus.UNAUTHORIZED;
+      return next(error);
+    }
+    const user = await User.findById(req.user.id);
+
+    if (!user) {
+      const error: ErrorWithStatus = new Error(authErrorMessages.UNAUTHORIZED_ACCESS);
+      error.status = ClientErrorStatus.UNAUTHORIZED;
+      return next(error);
+    }
+    res.status(200).json({
+      name: user.name,
+      email: user.email,
+      mobile:user.mobile,
+      language:user.language,
+      selfDescription:user.selfDescription
+      
+    });
+  } catch (error) {
+    const err: ErrorWithStatus = new Error(authErrorMessages.FETCH_USER_ERROR);
+    err.status = ClientErrorStatus.NOT_FOUND;
+    next(err);
+  }
+
+
+}
+
+
 export const updateProfileController = async (
   req: Request,
   res: Response,

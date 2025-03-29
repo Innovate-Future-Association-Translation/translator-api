@@ -1,4 +1,4 @@
-export enum ServeErrorMessagge {
+export enum ServeErrorMessage {
     INTERNAL_SERVER_ERROR = "Internal server error. Please try again later.",
     FAIL_FETCHING_USERS = "Fail fetching user list"
   }
@@ -27,5 +27,6 @@ export enum authErrorMessages{
   JWT_TOKEN_GENERATION_ERROR = "Error generating login token",
   JWT_CONFIG_ERROR = "JWT configuration error",
   USERNAME_ALREADY_TAKEN = "Username already taken",
-  USER_NOT_FOUND = "User not found"
+  USER_NOT_FOUND = "User not found",
+  FETCH_USER_ERROR ="Failed to retrieve user information"
 }

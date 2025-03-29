@@ -1,6 +1,5 @@
 import mongoose, { Connection } from "mongoose";
 import config from "../config";
-import { ServerErrorStatus } from "../utils/errorStatusCode";
 import { DatabaseErrorMessage } from "../utils/errorMessages";
 const connectDB = async (): Promise<Connection> => {
   const dbUrl = config.dbConnection;
