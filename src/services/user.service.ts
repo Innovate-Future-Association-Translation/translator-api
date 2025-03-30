@@ -1,8 +1,8 @@
-import jwt from "jsonwebtoken";
-import bcrypt from "bcrypt";
-import config from "../config";
-import { authErrorMessages } from "../utils/errorMessages";
-import { IUser, IUserModel, User } from "../models/User";
+import jwt from 'jsonwebtoken';
+import bcrypt from 'bcrypt';
+import config from '../config';
+import { authErrorMessages } from '../utils/errorMessages';
+import { IUser, IUserModel, User } from '../models/User';
 
 export const generateLoginToken = function (this: IUser): string {
   if (!config.jwtSecret) {
@@ -17,7 +17,7 @@ export const generateLoginToken = function (this: IUser): string {
     const secret: jwt.Secret = config.jwtSecret;
 
     const token = jwt.sign({ id: this.id.toString() }, secret, {
-      expiresIn: config.jwtTokenExpiry as any,
+      expiresIn: config.jwtTokenExpiry as jwt.SignOptions['expiresIn'],
     });
 
     if (!token) {
@@ -39,10 +39,7 @@ export async function findByCredential(
   if (!user) {
     throw new Error(authErrorMessages.INVALID_CREDENTIALS);
   }
-  const isCorrectPassword = await bcrypt.compare(
-    password,
-    user.password as string
-  );
+  const isCorrectPassword = await bcrypt.compare(password, user.password as string);
   if (!isCorrectPassword) {
     throw new Error(authErrorMessages.INVALID_CREDENTIALS);
   }
@@ -55,15 +52,15 @@ export async function findUserOrCreateAccountForGoogleUser(
   googleId: string,
   name: string
 ): Promise<IUser | null> {
-  //if there is no such email in mongoose , register a new mongondb user for the client
-  const user = await  User.findOne({ email });
+  const user = await User.findOne({ email });
   if (!user) {
     const newUser = new User({
       name: name,
       googleId: googleId,
       email: email,
-      language: "en",
-      selfDescription: ""
+      language: 'en',
+      selfDescription: '',
+      activated: true,
     });
     await newUser.save();
     return newUser;
@@ -87,7 +84,7 @@ export const updateProfile = async (
     if (updateData.language !== undefined && updateData.language === '') {
       throw new Error(authErrorMessages.MISSING_REGISTRATION_FIELD);
     }
-    
+
     if (updateData.name) {
       const existingUser = await User.findOne({
         name: updateData.name,
@@ -108,8 +105,7 @@ export const updateProfile = async (
 
     return updatedUser;
   } catch (error) {
-    console.error("Error updating profile:", error);
+    console.error('Error updating profile:', error);
     throw error;
   }
 };
-
