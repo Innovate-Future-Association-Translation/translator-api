@@ -3,6 +3,8 @@ import {
   getUsers,
   registerController,
   loginController,
+  verifyEmail,
+  resendVerificationEmail,
   updateProfileController
 } from "../../controllers/user.controller";
 import validateBody from "../../middlewares/validation/auth.validation";
@@ -50,7 +52,7 @@ const router = express.Router();
  *         - email
  *         - password
  *         - language
- *   
+ *
  * /users:
  *   get:
  *     summary: Retrieve the users list
@@ -75,7 +77,7 @@ const router = express.Router();
  *                 language: "zn"
  *       500:
  *         description: Internal server error.
- *   
+ *
  * /users/register:
  *   post:
  *     summary: Register a new user
@@ -478,6 +480,8 @@ router.post(
   loginController
 );
 
+router.get("/users/verify-email", verifyEmail);
+router.post("/users/resend-verification", resendVerificationEmail);
 router.patch(
   "/users/update",
   authMiddleware,

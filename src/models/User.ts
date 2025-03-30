@@ -1,5 +1,6 @@
 import mongoose, { Schema, Document, Model } from "mongoose";
 import bcrypt from "bcrypt";
+import { boolean } from "joi";
 import { findByCredential, generateLoginToken } from "../services/user.service"
 
 interface IUser extends Document {
@@ -10,6 +11,7 @@ interface IUser extends Document {
   language: string;
   selfDescription: string;
   generateLoginToken(): string;
+  activated: boolean;
 }
 const UserSchema = new Schema<IUser>({
   name: { type: String, required: true },
@@ -18,6 +20,7 @@ const UserSchema = new Schema<IUser>({
   mobile: { type: String },
   language: { type: String, required: true },
   selfDescription: { type: String },
+  activated: { type: Boolean, default: false },
 });
 interface IUserModel extends Model<IUser> {
   findByCredential(email: string, password: string): Promise<IUser | null>;
@@ -25,8 +28,8 @@ interface IUserModel extends Model<IUser> {
 }
 
 UserSchema.methods.generateLoginToken = generateLoginToken;
-UserSchema.statics.findByCredential =findByCredential as IUserModel["findByCredential"];
-
+UserSchema.statics.findByCredential =
+  findByCredential as IUserModel["findByCredential"];
 
 UserSchema.pre<IUser>("save", async function (next) {
   if (this.isModified("password")) {

@@ -1,10 +1,14 @@
 import { User, IUser } from "../models/User";
+import VerificationToken from "../models/VerificationToken";
 import { NextFunction, Request, Response } from "express";
 import { ErrorWithStatus } from "../middlewares/ErrorHandler";
 import { ClientErrorStatus } from "../utils/errorStatusCode";
+
+import { authErrorMessages, ServeErrorMessagge } from "../utils/errorMessages";
+import crypto from "crypto";
+import { sendVerificationEmail } from "../services/email.service";
 import authServices from "../services/auth.service";
 import { updateProfile } from "../services/user.service";
-import { authErrorMessages } from "../utils/errorMessages";
 import { authSuccessMessage } from "../utils/successMessage";
 import { userProfileMessage } from "../utils/userProfileMessame";
 
@@ -74,12 +78,12 @@ export const loginController = async (
       message: authSuccessMessage.LOGIN_SUCCESSFULLY,
       token: token,
     });
-  } catch (e : any) {
+  } catch (e: any) {
     const err: ErrorWithStatus = new Error();
     err.status = ClientErrorStatus.UNAUTHORIZED;
     err.message = e.message;
     next(err);
-    
+
     next(e); // Pass the error to the error handler
   }
 };
@@ -153,4 +157,84 @@ export const updateProfileController = async (
   }
 };
 
+export const verifyEmail = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { token } = req.query;
+    const verification = await VerificationToken.findOne({ token });
+
+    if (!verification) {
+      res
+        .status(400)
+        .json({ message: authErrorMessages.INVALID_VERIFICATION_LINK });
+      return;
+    }
+
+    if (new Date() > verification.expiresAt) {
+      res
+        .status(400)
+        .json({ message: authErrorMessages.EXPIRED_VERIFICATION_LINK });
+    }
+
+    await User.findByIdAndUpdate(verification.userId, { activated: true });
+    await VerificationToken.deleteOne({ token });
+
+    res
+      .status(200)
+      .json({ message: authSuccessMessage.EMAIL_VERIFY_SUCCESSFULLY });
+  } catch (error: any) {
+    const err: ErrorWithStatus = new Error();
+    err.status = ClientErrorStatus.BAD_REQUEST;
+    err.message = (error as Error).message;
+    next(error);
+  }
+};
+
+export const resendVerificationEmail = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      res.status(404).json({ message: authErrorMessages.INVALID_CREDENTIALS });
+      return;
+    }
+
+    if (user.activated)
+      res
+        .status(400)
+        .json({ message: authErrorMessages.EMAIL_ALREADY_REGISTERED });
+
+    const token = crypto.randomBytes(32).toString("hex");
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+    await VerificationToken.findOneAndUpdate(
+      { userId: user._id },
+      { token, expiresAt },
+      { upsert: true }
+    );
+
+    await sendVerificationEmail(email, token);
+
+    res
+      .status(200)
+      .json({ message: authSuccessMessage.EMAIL_RESEND_SUCCESSFULLY });
+  } catch (error: any) {
+    res.status(500).json({
+      message: ServeErrorMessagge.INTERNAL_SERVER_ERROR,
+      error: error.message,
+    });
+  }
+};
+
+
+
 export default { getUsers, registerController, loginController, updateProfileController };
+
