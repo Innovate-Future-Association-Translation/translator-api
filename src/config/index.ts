@@ -1,5 +1,5 @@
 import dotenv from "dotenv";
-import { AppErrorMessages, authErrorMessages } from "../utils/errorMessages";
+import {authErrorMessages } from "../utils/errorMessages";
 dotenv.config();
 
 // Default configuration values
@@ -9,6 +9,9 @@ const DEFAULT_DB_CONNECTION = "mongodb://127.0.0.1:27017/mydatabase";
 const DEFAULT_SWAGGER_DOC_PATH = "/api-docs";
 const DEFAULT_JWT_TOKEN_EXPIRY_IN = "15mins";
 const DEFAULT_JWT_SECRET = "translatorapi_default_secret_key_2024";
+const DEFAULT_EMAIL_ADDRESS = "ifatranslator@gmail.com";
+const DEFAULT_EMAIL_REDIRECT_URL ='http://localhost:8000'
+
 
 // Define the configuration interface
 interface Config {
@@ -19,7 +22,10 @@ interface Config {
   dbConnection: string;
   swaggerDocsPath: string;
   jwtSecret:string;
-  jwtTokenExpiry:string
+  jwtTokenExpiry:string;
+  emailUser:string;
+  emailPasskey:string;
+  emailRedirectURL:string
 }
 
 // Check critical configuration
@@ -34,7 +40,10 @@ const config: Config = {
   dbConnection: process.env.DATABASE_URL || DEFAULT_DB_CONNECTION,
   swaggerDocsPath: process.env.SWAGGER_DOC_PATH || DEFAULT_SWAGGER_DOC_PATH,
   jwtSecret: process.env.JWT_SECRET || DEFAULT_JWT_SECRET,
-  jwtTokenExpiry: process.env.JWT_EXPIRY || DEFAULT_JWT_TOKEN_EXPIRY_IN 
+  jwtTokenExpiry: process.env.JWT_EXPIRY || DEFAULT_JWT_TOKEN_EXPIRY_IN,
+  emailUser:process.env.EMAIL_USER||DEFAULT_EMAIL_ADDRESS,
+  emailPasskey:process.env.EMAIL_PASSKEY as string,
+  emailRedirectURL:process.env.EMAIL_REDIRECT_URL||DEFAULT_EMAIL_REDIRECT_URL
 };
 
 export default config;

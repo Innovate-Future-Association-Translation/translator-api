@@ -221,7 +221,7 @@ export const resendVerificationEmail = async (
       { upsert: true }
     );
 
-    await sendVerificationEmail(email, token);
+    await sendVerificationEmail(email, token, user.name);
 
     res
       .status(200)

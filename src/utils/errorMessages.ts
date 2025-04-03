@@ -30,4 +30,5 @@ export enum authErrorMessages {
   INVALID_VERIFICATION_LINK = "invalid or expired link",
   EXPIRED_VERIFICATION_LINK = "expired link",
   EMAIL_NOT_VERIFIED = "the email is not verified",
+  SENDING_EMAIL_ERROR = "error(s) occurs in sending email"
 }

@@ -5,7 +5,7 @@ import {
   loginController,
   verifyEmail,
   resendVerificationEmail,
-  updateProfileController
+  updateProfileController,
 } from "../../controllers/user.controller";
 import validateBody from "../../middlewares/validation/auth.validation";
 import authValidationSchema from "../../validator/auth/authSchema";
