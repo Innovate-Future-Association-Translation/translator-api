@@ -3,7 +3,7 @@ pipeline {
 
   environment {
     AWS_DEFAULT_REGION = 'ap-southeast-2'
-    ECR_REPOSITORY = '730335329548.dkr.ecr.ap-southeast-2.amazonaws.com/translator-api'
+    ECR_REPOSITORY = '417650894705.dkr.ecr.ap-southeast-2.amazonaws.com/translator-api'
     ECS_CLUSTER = 'translator-cluster'
     ECS_SERVICE = 'translator-service'
   }
@@ -51,7 +51,7 @@ pipeline {
               requiresCompatibilities: ["FARGATE"],
               cpu: "512",
               memory: "1024",
-              executionRoleArn: "arn:aws:iam::730335329548:role/ecsTaskExecutionRoleTerraform",
+              executionRoleArn: "arn:aws:iam::417650894705:role/ecsTaskExecutionRoleTerraform",
               containerDefinitions: [[
                 name: "translator-api",
                 image: "${ECR_REPOSITORY}:${IMAGE_TAG}",
