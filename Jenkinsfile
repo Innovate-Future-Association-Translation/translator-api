@@ -69,7 +69,7 @@ pipeline {
 
                         sh """
                             aws ecs register-task-definition --cli-input-json file://taskdef.json
-                            aws ecs update-service --cluster translator-cluster --service translator-service --force-new-deployment
+                            aws ecs update-service --cluster translator-cluster --service translator-service --task-definition translator-task --force-new-deployment
                         """
                     }
                 }
