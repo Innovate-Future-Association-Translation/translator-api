@@ -23,11 +23,11 @@ pipeline {
                     withCredentials([
                         usernamePassword(credentialsId: 'aws-access', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')
                     ]) {
-                        sh '''
-                            aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
-                            docker build -t $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG .
-                            docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG
-                        '''
+                        sh """
+                            aws ecr get-login-password --region ${AWS_DEFAULT_REGION} | docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com
+                            docker build -t ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${IMAGE_REPO_NAME}:${IMAGE_TAG} .
+                            docker push ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${IMAGE_REPO_NAME}:${IMAGE_TAG}
+                        """
                     }
                 }
             }
@@ -55,10 +55,10 @@ pipeline {
                             requiresCompatibilities: ["FARGATE"],
                             cpu: "512",
                             memory: "1024",
-                            executionRoleArn: "arn:aws:iam::$AWS_ACCOUNT_ID:role/ecsTaskExecutionRoleTerraform",
+                            executionRoleArn: "arn:aws:iam::${AWS_ACCOUNT_ID}:role/ecsTaskExecutionRoleTerraform",
                             containerDefinitions: [[
                                 name: "translator-api",
-                                image: "$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG",
+                                image: "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${IMAGE_REPO_NAME}:${IMAGE_TAG}",
                                 essential: true,
                                 portMappings: [[ containerPort: 8000, hostPort: 8000, protocol: "tcp" ]],
                                 environment: containerEnv
@@ -67,10 +67,10 @@ pipeline {
 
                         writeJSON file: 'taskdef.json', json: taskDef, pretty: 4
 
-                        sh '''
+                        sh """
                             aws ecs register-task-definition --cli-input-json file://taskdef.json
                             aws ecs update-service --cluster translator-cluster --service translator-service --force-new-deployment
-                        '''
+                        """
                     }
                 }
             }
