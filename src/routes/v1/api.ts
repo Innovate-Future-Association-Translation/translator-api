@@ -6,6 +6,8 @@ import {
   loginController,
   updateProfileController,
   getUserProfileController,
+  verifyEmail,
+  resendVerificationEmail,
 } from "../../controllers/user.controller";
 import validateBody from "../../middlewares/validation/auth.validation";
 import authValidationSchema from "../../validator/auth/authSchema";
@@ -483,6 +485,8 @@ router.post(
   loginController
 );
 
+router.get("/users/verify-email", verifyEmail);
+router.post("/users/resend-verification", resendVerificationEmail);
 router.patch(
   "/users/update",
   authMiddleware,

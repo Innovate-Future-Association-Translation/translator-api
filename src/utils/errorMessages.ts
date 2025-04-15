@@ -8,19 +8,20 @@ export enum ServeErrorMessage {
     MISSING_DATABASE_URL= "DATABASE_URL is not defined in the environment variables."
   }
 
-    
-  export enum AppErrorMessages {
-    APP_FAIL_INITIALIZATION = "Failed to initialize app:"
-  }
 
-export enum authErrorMessages{
+
+export enum AppErrorMessages {
+  APP_FAIL_INITIALIZATION = "Failed to initialize app:",
+}
+
+export enum authErrorMessages {
   INVALID_CREDENTIALS = "Invalid email or password.",
   EMAIL_ALREADY_REGISTERED = "Email is already registered.",
   MISSING_AUTH_TOKEN = "Authorization token is missing.",
   INVALID_AUTH_TOKEN = "Authorization token is invalid.",
   UNAUTHORIZED_ACCESS = "You are not authorized to perform this action.",
   MISSING_REGISTRATION_FIELD =  "Required registration fields are missing.",
-  VALIDATION_FAIL = "fail the authtication format please see the details" ,
+  VALIDATION_FAIL = "fail the authentication format please see the details" ,
   DUPLICATION_EMAIL =  "this email has been registered",
   UNKNOWN_ERROR = "registration fail due to unknown reason",
   JWT_SECRET_NOT_SET = "JWT secret not set, please check JWT_SECRET environment variable",
@@ -28,5 +29,11 @@ export enum authErrorMessages{
   JWT_CONFIG_ERROR = "JWT configuration error",
   USERNAME_ALREADY_TAKEN = "Username already taken",
   USER_NOT_FOUND = "User not found",
-  FETCH_USER_ERROR ="Failed to retrieve user information"
+  FETCH_USER_ERROR ="Failed to retrieve user information",
+  INVALID_VERIFICATION_LINK = "invalid or expired link",
+  EXPIRED_VERIFICATION_LINK = "expired link",
+  EMAIL_NOT_VERIFIED = "the email is not verified",
+  SENDING_EMAIL_ERROR = "error(s) occurs in sending email"
 }
+
+
