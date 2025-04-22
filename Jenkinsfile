@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         AWS_DEFAULT_REGION = 'ap-southeast-2'
-        AWS_ACCOUNT_ID = '417650894705'
+        AWS_ACCOUNT_ID = '730335329548'
         IMAGE_REPO_NAME = 'translator-api'
     }
 
