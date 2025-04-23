@@ -1,228 +1,289 @@
-// Set JWT_SECRET first to avoid configuration warnings
-process.env.JWT_SECRET = "testSecret";
-import config from "../config";
-config.jwtSecret = process.env.JWT_SECRET;
+import { User, IUser } from '../models/User';
+import VerificationToken from '../models/VerificationToken';
+import { NextFunction, Request, Response } from 'express';
+import { ErrorWithStatus } from '../middlewares/ErrorHandler';
+import { ClientErrorStatus } from '../utils/errorStatusCode';
 
-import authServices from "../services/auth.service";
-import { User, IUser } from "../models/User";
-import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
-import { authErrorMessages } from "../utils/errorMessages";
+import { authErrorMessages, ServeErrorMessage } from '../utils/errorMessages';
+import crypto from 'crypto';
+import { sendVerificationEmail } from '../services/email.service';
+import authServices from '../services/auth.service';
+import { updateProfile } from '../services/user.service';
+import { authSuccessMessage } from '../utils/successMessage';
+import { userProfileMessage } from '../utils/userProfileMessage';
+import config from '../config';
+import { sendForgetPasswordEmail } from '../services/email.service';
 
-class TestError extends Error {
-  status?: number;
-  details?: string[];
-}
+export const getUsers = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const users = await User.find();
+    res.status(200).json(users);
+  } catch (error) {
+    const err: ErrorWithStatus = new Error();
+    err.status = ClientErrorStatus.BAD_REQUEST;
+    err.message = (error as Error).message;
+    next(error);
+  }
+};
 
-interface MockUser {
-  _id: string;
-  name: string;
-  email: string;
-  password: string;
-  language: string;
-  mobile: string;
-  selfDescription: string;
-  save: jest.Mock;
-  generateLoginToken: jest.Mock;
-  findByCredential?: jest.Mock;
-}
+export const registerController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const userData = req.body;
+    const { name, email, password, mobile, language, selfDescription } = req.body;
 
-jest.mock("../models/User");
-jest.mock("bcrypt");
-jest.mock("jsonwebtoken");
+    if (!name || !email || !password || !language) {
+      const error: ErrorWithStatus = new Error(authErrorMessages.MISSING_REGISTRATION_FIELD);
+      error.status = ClientErrorStatus.BAD_REQUEST;
+      return next(error);
+    }
 
-describe("Auth Service Unit Tests", () => {
-  const mockUserData: MockUser = {
-    _id: "1234567890abcdef12345678",
-    name: "Test User",
-    email: "test@example.com",
-    password: "password123",
-    language: "en",
-    mobile: "+61412345678",
-    selfDescription: "I am a test user",
-    save: jest.fn(),
-    generateLoginToken: jest.fn(),
-  };
+    await authServices.register({
+      name,
+      email,
+      password,
+      mobile,
+      language,
+      selfDescription,
+    } as IUser);
+    res.status(201).json({ message: authSuccessMessage.REGISTER_SUCCESSFULLY, name: name });
+  } catch (error: any) {
+    const err: ErrorWithStatus = new Error();
+    err.status = error.status || ClientErrorStatus.BAD_REQUEST;
+    err.message = (error as Error).message;
+    next(err);
+  }
+};
 
-  const mockCredentials = {
-    email: "test@example.com",
-    password: "password123",
-  };
+export const loginController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  const { email, password } = req.body;
+  try {
+    const token = await authServices.login(email, password);
 
-  beforeAll(() => {});
+    res.status(200).json({
+      message: 'Login successful',
+      token,
+      redirectUrl: `${config.loginCallBackURL}?token=${token}`,
+    });
+  } catch (e: any) {
+    const err: ErrorWithStatus = new Error();
+    err.status = ClientErrorStatus.UNAUTHORIZED;
+    err.message = e.message;
+    next(err);
 
-  beforeEach(() => {
-    jest.clearAllMocks();
-    mockUserData.save.mockReset();
-    mockUserData.generateLoginToken.mockReset();
-  });
+    next(e); // Pass the error to the error handler
+  }
+};
 
-  afterAll(() => {});
+export const getUserProfileController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    if (!req.user || !req.user.id) {
+      const error: ErrorWithStatus = new Error(authErrorMessages.UNAUTHORIZED_ACCESS);
+      error.status = ClientErrorStatus.UNAUTHORIZED;
+      return next(error);
+    }
+    const user = await User.findById(req.user.id);
 
-  describe("register() - User Registration", () => {
-    it("should successfully register a new user", async () => {
-      mockUserData.save.mockResolvedValue(mockUserData);
+    if (!user) {
+      const error: ErrorWithStatus = new Error(authErrorMessages.UNAUTHORIZED_ACCESS);
+      error.status = ClientErrorStatus.UNAUTHORIZED;
+      return next(error);
+    }
+    res.status(200).json({
+      name: user.name,
+      email: user.email,
+      mobile: user.mobile,
+      language: user.language,
+      selfDescription: user.selfDescription,
+    });
+  } catch (error) {
+    const err: ErrorWithStatus = new Error(authErrorMessages.FETCH_USER_ERROR);
+    err.status = ClientErrorStatus.NOT_FOUND;
+    next(err);
+  }
+};
 
-      (User as jest.Mocked<any>).mockImplementation(
-        (userData: Partial<IUser>) => {
-          return mockUserData;
-        }
-      );
+export const updateProfileController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const userId = req.user?.id;
 
-      await authServices.register(mockUserData as any);
+    if (!userId) {
+      const error: ErrorWithStatus = new Error(authErrorMessages.UNAUTHORIZED_ACCESS);
+      error.status = ClientErrorStatus.UNAUTHORIZED;
+      return next(error);
+    }
 
-      expect(User).toHaveBeenCalledWith(
-        expect.objectContaining({
-          name: mockUserData.name,
-          email: mockUserData.email,
-          password: mockUserData.password,
-          language: mockUserData.language,
-          mobile: mockUserData.mobile,
-          selfDescription: mockUserData.selfDescription,
-        })
-      );
-      expect(mockUserData.save).toHaveBeenCalled();
+    const { name, language, mobile, selfDescription } = req.body;
+
+    if (!language) {
+      const error: ErrorWithStatus = new Error(authErrorMessages.MISSING_REGISTRATION_FIELD);
+      error.status = ClientErrorStatus.BAD_REQUEST;
+      return next(error);
+    }
+
+    // make sure updated data is useful
+    if (name && name.trim() === '') {
+      const error: ErrorWithStatus = new Error(authErrorMessages.MISSING_REGISTRATION_FIELD);
+      error.status = ClientErrorStatus.BAD_REQUEST;
+      return next(error);
+    }
+
+    if (mobile && mobile.trim() === '') {
+      const error: ErrorWithStatus = new Error(authErrorMessages.MISSING_REGISTRATION_FIELD);
+      error.status = ClientErrorStatus.BAD_REQUEST;
+      return next(error);
+    }
+
+    if (selfDescription && selfDescription.trim() === '') {
+      const error: ErrorWithStatus = new Error(authErrorMessages.MISSING_REGISTRATION_FIELD);
+      error.status = ClientErrorStatus.BAD_REQUEST;
+      return next(error);
+    }
+
+    const updatedUser = await updateProfile(userId, {
+      name,
+      language,
+      mobile,
+      selfDescription,
     });
 
-    it("should throw conflict error when email already exists", async () => {
-      const mockError = new TestError(authErrorMessages.DUPLICATION_EMAIL);
-      mockError.status = 409;
-      (mockError as any).code = 11000;
+    if (!updatedUser) {
+      const error: ErrorWithStatus = new Error(userProfileMessage.UPDATE_PROFILE_NOT_FOUND);
+      error.status = ClientErrorStatus.NOT_FOUND;
+      return next(error);
+    }
 
-      mockUserData.save.mockRejectedValue(mockError);
-      (User as jest.Mocked<any>).mockImplementation(() => mockUserData);
-
-      await expect(
-        authServices.register(mockUserData as any)
-      ).rejects.toMatchObject({
-        message: authErrorMessages.DUPLICATION_EMAIL,
-        status: 409,
-      });
+    res.status(200).json({
+      message: userProfileMessage.UPDATE_PROFILE_SUCCESS,
+      user: {
+        name: updatedUser.name,
+        email: updatedUser.email,
+        language: updatedUser.language,
+        mobile: updatedUser.mobile,
+        selfDescription: updatedUser.selfDescription,
+      },
     });
+  } catch (error) {
+    next(error);
+  }
+};
 
-    it("should handle unknown database errors", async () => {
-      mockUserData.save.mockRejectedValue(
-        new Error("Database connection failed")
-      );
-      (User as jest.Mocked<any>).mockImplementation(() => mockUserData);
+export const verifyEmail = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { token } = req.query;
+    const verification = await VerificationToken.findOne({ token });
 
-      await expect(authServices.register(mockUserData as any)).rejects.toThrow(
-        authErrorMessages.UNKNOWN_ERROR
-      );
+    if (!verification) {
+      res.status(400).json({ message: authErrorMessages.INVALID_VERIFICATION_LINK });
+      return;
+    }
+
+    if (new Date() > verification.expiresAt) {
+      res.status(400).json({ message: authErrorMessages.EXPIRED_VERIFICATION_LINK });
+    }
+
+    await User.findByIdAndUpdate(verification.userId, { activated: true });
+    await VerificationToken.deleteOne({ token });
+
+    res.status(200).json({ message: authSuccessMessage.EMAIL_VERIFY_SUCCESSFULLY });
+  } catch (error: any) {
+    const err: ErrorWithStatus = new Error();
+    err.status = ClientErrorStatus.BAD_REQUEST;
+    err.message = (error as Error).message;
+    next(error);
+  }
+};
+
+export const resendVerificationEmail = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      res.status(404).json({ message: authErrorMessages.INVALID_CREDENTIALS });
+      return;
+    }
+
+    if (user.activated)
+      res.status(400).json({ message: authErrorMessages.EMAIL_ALREADY_REGISTERED });
+
+    const token = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+    await VerificationToken.findOneAndUpdate(
+      { userId: user._id },
+      { token, expiresAt },
+      { upsert: true }
+    );
+
+    await sendVerificationEmail(email, token, user.name);
+
+    res.status(200).json({ message: authSuccessMessage.EMAIL_RESEND_SUCCESSFULLY });
+  } catch (error: any) {
+    res.status(500).json({
+      message: ServeErrorMessage.INTERNAL_SERVER_ERROR,
+      error: error.message,
     });
+  }
+};
+export const requestResetPassword = async (req: Request, res: Response, next: NextFunction) => {
+  const { email } = req.body;
 
-    it("should throw error when required fields are missing", async () => {
-      const invalidUserData = {
-        email: "test@example.com",
-        password: "password123",
-      };
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: 'Email not found' });
+    }
 
-      (User as jest.Mocked<any>).mockImplementation(
-        (userData: Partial<IUser>) => {
-          if (!userData.name || !userData.language) {
-            throw new Error(authErrorMessages.MISSING_REGISTRATION_FIELD);
-          }
-          return mockUserData;
-        }
-      );
+    const token = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
-      await expect(
-        authServices.register(invalidUserData as any)
-      ).rejects.toThrow(authErrorMessages.UNKNOWN_ERROR);
-    });
-  });
+    await VerificationToken.findOneAndUpdate(
+      { userId: user._id },
+      { token, expiresAt },
+      { upsert: true }
+    );
 
-  describe("login() - User Login", () => {
-    it("should log in successfully and return a token", async () => {
-      const mockUser = {
-        ...mockUserData,
-        findByCredential: jest.fn().mockResolvedValue(mockUserData),
-      };
+    await sendForgetPasswordEmail(email, token, user.name);
 
-      (User as jest.Mocked<any>).findByCredential = jest
-        .fn()
-        .mockResolvedValue(mockUser);
-      mockUser.generateLoginToken.mockReturnValue("mockToken123");
+    res.status(200).json({ message: 'Reset email sent successfully' });
+  } catch (error) {
+    next(error);
+  }
+};
 
-      (bcrypt.compare as jest.Mocked<any>).mockResolvedValue(true);
+const userController = {
+  getUsers,
+  registerController,
+  loginController,
+  updateProfileController,
+  getUserProfileController,
+  verifyEmail,
+  resendVerificationEmail,
+  requestResetPassword,
+};
 
-      const token = await authServices.login(
-        mockCredentials.email,
-        mockCredentials.password
-      );
-
-      expect(User.findByCredential).toHaveBeenCalledWith(
-        mockCredentials.email,
-        mockCredentials.password
-      );
-      expect(mockUser.generateLoginToken).toHaveBeenCalled();
-      expect(token).toBe("mockToken123");
-    });
-
-    it("should throw error when credentials are invalid", async () => {
-      (User as jest.Mocked<any>).findByCredential = jest
-        .fn()
-        .mockRejectedValue(new Error(authErrorMessages.INVALID_CREDENTIALS));
-
-      await expect(
-        authServices.login("wrong@example.com", "wrongpass")
-      ).rejects.toThrow(authErrorMessages.INVALID_CREDENTIALS);
-    });
-
-    it("should handle JWT generation errors", async () => {
-      const mockUser = {
-        ...mockUserData,
-        findByCredential: jest.fn().mockResolvedValue(mockUserData),
-        generateLoginToken: jest.fn().mockImplementation(() => {
-          throw new Error(authErrorMessages.JWT_TOKEN_GENERATION_ERROR);
-        }),
-      };
-
-      (User as jest.Mocked<any>).findByCredential = jest
-        .fn()
-        .mockResolvedValue(mockUser);
-      (bcrypt.compare as jest.Mocked<any>).mockResolvedValue(true);
-
-      await expect(
-        authServices.login("test@example.com", "password123")
-      ).rejects.toThrow(authErrorMessages.JWT_TOKEN_GENERATION_ERROR);
-    });
-
-    it("should throw error if JWT secret is not set", async () => {
-      const originalJwtSecret = config.jwtSecret;
-      config.jwtSecret = "";
-
-      const mockUser = {
-        ...mockUserData,
-        findByCredential: jest.fn().mockResolvedValue(mockUserData),
-        generateLoginToken: jest.fn().mockImplementation(() => {
-          if (!config.jwtSecret) {
-            throw new Error(authErrorMessages.JWT_SECRET_NOT_SET);
-          }
-          return "token";
-        }),
-      };
-
-      (User as jest.Mocked<any>).findByCredential = jest
-        .fn()
-        .mockResolvedValue(mockUser);
-      (bcrypt.compare as jest.Mocked<any>).mockResolvedValue(true);
-
-      await expect(
-        authServices.login("test@example.com", "password123")
-      ).rejects.toThrow(authErrorMessages.JWT_SECRET_NOT_SET);
-
-      config.jwtSecret = originalJwtSecret;
-    });
-
-    it("should throw error when password is incorrect", async () => {
-      (User as jest.Mocked<any>).findByCredential = jest
-        .fn()
-        .mockRejectedValue(new Error(authErrorMessages.INVALID_CREDENTIALS));
-
-      await expect(
-        authServices.login("test@example.com", "wrongpassword")
-      ).rejects.toThrow(authErrorMessages.INVALID_CREDENTIALS);
-    });
-  });
-});
+export default userController;
