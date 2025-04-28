@@ -61,7 +61,7 @@ pipeline {
                                 image: "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${IMAGE_REPO_NAME}:${IMAGE_TAG}",
                                 essential: true,
                                 portMappings: [[ containerPort: 8000, hostPort: 8000, protocol: "tcp" ]],
-                                environment: containerEnv
+                                environment: containerEnv，
                                 "logConfiguration": {
                                 "logDriver": "awslogs",
                                 "options": {
