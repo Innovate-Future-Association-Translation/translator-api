@@ -11,6 +11,7 @@ import authServices from '../services/auth.service';
 import { updateProfile } from '../services/user.service';
 import { authSuccessMessage } from '../utils/successMessage';
 import { userProfileMessage } from '../utils/userProfileMessage';
+
 import config from '../config';
 
 export const getUsers = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -31,7 +32,6 @@ export const registerController = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const userData = req.body;
     const { name, email, password, mobile, language, selfDescription } = req.body;
 
     if (!name || !email || !password || !language) {
@@ -105,9 +105,11 @@ export const getUserProfileController = async (
       mobile: user.mobile,
       language: user.language,
       selfDescription: user.selfDescription,
+      id: user.id,
     });
   } catch (error) {
     const err: ErrorWithStatus = new Error(authErrorMessages.FETCH_USER_ERROR);
+    err.message = (error as Error).message;
     err.status = ClientErrorStatus.NOT_FOUND;
     next(err);
   }
@@ -212,11 +214,7 @@ export const verifyEmail = async (
   }
 };
 
-export const resendVerificationEmail = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
+export const resendVerificationEmail = async (req: Request, res: Response): Promise<void> => {
   try {
     const { email } = req.body;
     const user = await User.findOne({ email });

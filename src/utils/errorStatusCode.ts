@@ -26,6 +26,11 @@ export enum ClientErrorStatus {
   DUPLICATION_EMAIL = 11000,
 }
 
+export enum MeetingErrorStatus {
+  BAD_REQUEST = 400,
+  ROOM_NOT_FOUND = 404,
+}
+
 export enum ServerErrorStatus {
   INTERNAL_SERVER_ERROR = 500,
   NOT_IMPLEMENTED = 501,
