@@ -61,10 +61,10 @@ pipeline {
                                 image: "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${IMAGE_REPO_NAME}:${IMAGE_TAG}",
                                 essential: true,
                                 portMappings: [[ containerPort: 8000, hostPort: 8000, protocol: "tcp" ]],
-                                environment: containerEnv，
+                                environment: containerEnv,
                                 "logConfiguration": {
-                                    "logDriver": "awslogs",
-                                    "options": {
+                                "logDriver": "awslogs",
+                                "options": {
                                         "awslogs-group": "/ecs/translator-service",
                                         "awslogs-region": "ap-southeast-2",
                                         "awslogs-stream-prefix": "ecs"
