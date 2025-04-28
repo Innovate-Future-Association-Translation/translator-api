@@ -76,6 +76,8 @@ pipeline {
                         writeJSON file: 'taskdef.json', json: taskDef, pretty: 4
 
                         sh """
+                            aws logs create-log-group --log-group-name /ecs/translator-service --region ap-southeast-2 || true
+                            aws logs put-retention-policy --log-group-name /ecs/translator-service --retention-in-days 1 --region ap-southeast-2 || true
                             aws ecs register-task-definition --cli-input-json file://taskdef.json
                             aws ecs update-service --cluster translator-cluster --service translator-service --task-definition translator-task --force-new-deployment
                         """
