@@ -62,14 +62,14 @@ pipeline {
                                 essential: true,
                                 portMappings: [[ containerPort: 8000, hostPort: 8000, protocol: "tcp" ]],
                                 environment: containerEnv，
-                                logConfiguration: [
-                                    logDriver: 'awslogs',
-                                    options: [
-                                        'awslogs-group': '/ecs/translator-service',
-                                        'awslogs-region': 'ap-southeast-2',
-                                        'awslogs-stream-prefix': 'ecs'
-                                    ]
-                                ]
+                                "logConfiguration": {
+                                    "logDriver": "awslogs",
+                                    "options": {
+                                        "awslogs-group": "/ecs/translator-service",
+                                        "awslogs-region": "ap-southeast-2",
+                                        "awslogs-stream-prefix": "ecs"
+                                    }
+                                }
                             ]]
                         ]
 
