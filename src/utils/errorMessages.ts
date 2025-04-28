@@ -33,3 +33,9 @@ export enum authErrorMessages {
   EMAIL_NOT_VERIFIED = 'the email is not verified',
   SENDING_EMAIL_ERROR = 'error(s) occurs in sending email',
 }
+
+export enum meetingErrorMessage {
+  FAIL_CREATING_MEETING_ROOM = 'fail to create a meeting room',
+  MISSING_CREATOR_ID = 'missing creator id',
+  ROOM_NOT_FOUND = 'meeting room not found or invalid',
+}
