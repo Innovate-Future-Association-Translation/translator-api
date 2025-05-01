@@ -14,10 +14,11 @@ const DEFAULT_GOOGLE_CALLBACK_URL = 'http://localhost:8000/api/v1/users/googleAu
 const DEFAULT_LOGIN_CALLBACK_URL = 'http://localhost:3000/login-callback';
 const DEFAULT_EMAIL_ADDRESS = 'ifatranslator@gmail.com';
 const DEFAULT_EMAIL_REDIRECT_URL = 'http://localhost:8000';
-const EMAIL_EXPIRY_TIME = 24 * 60 * 60 * 1000; // in ms unit
+const EMAIL_EXPIRY_TIME = 24 * 60 * 60 * 1000;
 const EMAIL_TOKEN_RANDOM_BYTE = 32;
 const ENCODING_METHOD = 'hex';
-// Define the configuration interface
+const DEFAULT_MEETING_REDIRECT_URL = 'http://localhost:3000/dashboard/instant-meeting-room';
+
 interface Config {
   port: number;
   api: {
@@ -44,7 +45,6 @@ if (!process.env.JWT_SECRET) {
   console.warn(authErrorMessages.JWT_SECRET_NOT_SET);
 }
 
-// Create the configuration object
 const config: Config = {
   port: process.env.PORT ? parseInt(process.env.PORT) : DEFAULT_PORT,
   api: { prefix: DEFAULT_API_PREFIX },

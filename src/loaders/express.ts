@@ -13,13 +13,22 @@ import passport from "../middlewares/thirdPartyAuth/passport";
 import session from "express-session";
 
 const swaggerSpec = swaggerJSDoc(swaggerOptions);
+const allowedOrigins = ['http://localhost:3000', 'http://192.168.0.108:3001'];
 
 const startServer = () => {
   const app = express();
 
   app.use(cors({
-    origin: 'http://localhost:3000',
-    credentials: true, 
+    origin: function (origin, callback) {
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.indexOf(origin) === -1) {
+        const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+        console.error(`CORS Error: Origin ${origin} not allowed.`); 
+        return callback(new Error(msg), false);
+      }
+      return callback(null, true);
+    },
+    credentials: true,
   }));
 
   app.use(morgan("combined"));
