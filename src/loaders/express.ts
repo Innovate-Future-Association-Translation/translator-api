@@ -76,8 +76,8 @@ const startServer = () => {
     console.warn(authErrorMessages.JWT_CONFIG_ERROR);
   }
 
-  const server = app.listen(config.port, () => {
-    console.log('SERVER STARTED:', config.port);
+  const server = app.listen(config.port, '0.0.0.0', () => {
+    console.log(`SERVER STARTED on http://0.0.0.0:${config.port}`);
   });
 
   server.on('error', (err: Error) => {
