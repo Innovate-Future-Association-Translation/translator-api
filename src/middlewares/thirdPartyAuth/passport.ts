@@ -1,7 +1,7 @@
-import passport from "passport";
-import { Strategy as GoogleStrategy } from "passport-google-oauth20";
-import config from "../../config";
-import { findUserOrCreateAccountForGoogleUser } from "../../services/user.service";
+import passport from 'passport';
+import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
+import config from '../../config';
+import { findUserOrCreateAccountForGoogleUser } from '../../services/user.service';
 passport.use(
   new GoogleStrategy(
     {
@@ -24,11 +24,11 @@ passport.use(
             return done(null, user);
           } else {
             return done(null, false, {
-              message: "User authentication failed.",
+              message: 'User authentication failed.',
             });
           }
         } else {
-          return done(null, false, { message: "Email not found in profile." });
+          return done(null, false, { message: 'Email not found in profile.' });
         }
       } catch (error) {
         return done(error);

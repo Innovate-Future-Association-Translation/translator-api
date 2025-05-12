@@ -1,10 +1,10 @@
-import { Request, Response, NextFunction } from "express";
-import jwt from "jsonwebtoken";
-import config from "../../config";
-import { ErrorWithStatus } from "../ErrorHandler";
-import { authErrorMessages } from "../../utils/errorMessages";
-import { ClientErrorStatus } from "../../utils/errorStatusCode";
-import { User } from "../../models/User";
+import { Request, Response, NextFunction } from 'express';
+import jwt from 'jsonwebtoken';
+import config from '../../config';
+import { ErrorWithStatus } from '../ErrorHandler';
+import { authErrorMessages } from '../../utils/errorMessages';
+import { ClientErrorStatus } from '../../utils/errorStatusCode';
+import { User } from '../../models/User';
 
 interface JwtPayload {
   id: string;
@@ -20,21 +20,17 @@ declare global {
   }
 }
 
-const authMiddleware = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
+const authMiddleware = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     // Get token from request header
     const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
       const error: ErrorWithStatus = new Error(authErrorMessages.MISSING_AUTH_TOKEN);
       error.status = ClientErrorStatus.UNAUTHORIZED;
       return next(error);
     }
 
-    const token = authHeader.split(" ")[1];
+    const token = authHeader.split(' ')[1];
     if (!token) {
       const error: ErrorWithStatus = new Error(authErrorMessages.MISSING_AUTH_TOKEN);
       error.status = ClientErrorStatus.UNAUTHORIZED;
@@ -62,4 +58,4 @@ const authMiddleware = async (
   }
 };
 
-export default authMiddleware; 
+export default authMiddleware;

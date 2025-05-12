@@ -1,4 +1,4 @@
-import { Schema, model, Document } from "mongoose";
+import { Schema, model, Document } from 'mongoose';
 
 interface IVerificationToken extends Document {
   userId: string;
@@ -7,12 +7,9 @@ interface IVerificationToken extends Document {
 }
 
 const VerificationTokenSchema = new Schema<IVerificationToken>({
-  userId: { type: String, ref: "User", required: true },
+  userId: { type: String, ref: 'User', required: true },
   token: { type: String, required: true },
   expiresAt: { type: Date, required: true },
 });
 
-export default model<IVerificationToken>(
-  "VerificationToken",
-  VerificationTokenSchema
-);
+export default model<IVerificationToken>('VerificationToken', VerificationTokenSchema);

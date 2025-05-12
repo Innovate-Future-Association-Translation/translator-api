@@ -8,4 +8,4 @@ module.exports = {
   },
   coveragePathIgnorePatterns: ['/node_modules/'],
   verbose: true,
-}; 
+};

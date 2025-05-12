@@ -1,6 +1,5 @@
 import config from '../config';
 
-
 const swaggerOptions = {
   definition: {
     openapi: '3.0.0',
@@ -17,7 +16,5 @@ const swaggerOptions = {
   },
   apis: ['./src/routes/v1/api.ts'],
 };
-
-
 
 export default swaggerOptions;

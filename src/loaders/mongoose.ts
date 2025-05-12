@@ -1,6 +1,6 @@
-import mongoose, { Connection } from "mongoose";
-import config from "../config";
-import { DatabaseErrorMessage } from "../utils/errorMessages";
+import mongoose, { Connection } from 'mongoose';
+import config from '../config';
+import { DatabaseErrorMessage } from '../utils/errorMessages';
 const connectDB = async (): Promise<Connection> => {
   const dbUrl = config.dbConnection;
 
@@ -12,7 +12,7 @@ const connectDB = async (): Promise<Connection> => {
     const connection = await mongoose.connect(dbUrl, {
       serverSelectionTimeoutMS: 30000,
     });
-    console.log("Database connection established successfully.");
+    console.log('Database connection established successfully.');
     return connection.connection;
   } catch (error) {
     throw new Error(DatabaseErrorMessage.FAIL_TO_CONNECT_DATABASE);

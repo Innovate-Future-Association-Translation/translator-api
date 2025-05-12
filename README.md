@@ -1,9 +1,11 @@
 # IFA Translator API
 
 ## Description
+
 **IFA Translator API** is an AI-powered translation service built with Node.js, Express, and MongoDB. This RESTful API is designed to provide translation functionalities and manage user data. The API is documented using Swagger to provide interactive, detailed documentation for developers and stakeholders.
 
 ### tech stacks
+
 nodeJs v20.10.0
 MongoDB
 ExpressJS
@@ -11,6 +13,7 @@ ExpressJS
 #### Environment Setup
 
 Before running the application, ensure you have the following installed:
+
 - [Node.js](recommended version: 20.10.0)
 - [MongoDB] (either local or cloud-based)
 
@@ -35,3 +38,4 @@ JWT_SECRET=aQuickBrownFoxJumpAwayALazyDog
 ###### Swagger API DOC URL
 -Once you launch your project successfully, you are about the read and execute this swagger api document
  [Swagger API Docs](http://localhost:8000/api-docs)
+```
