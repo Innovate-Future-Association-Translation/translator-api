@@ -1,3 +1,3 @@
-import init from "./loaders";
+import init from './loaders';
 
 init();

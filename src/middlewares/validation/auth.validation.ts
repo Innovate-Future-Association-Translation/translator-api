@@ -1,8 +1,8 @@
-import { Request, Response, NextFunction } from "express";
-import { ErrorWithStatus } from "../ErrorHandler";
-import { ClientErrorStatus } from "../../utils/errorStatusCode";
-import { ZodSchema, ZodError } from "zod";
-import { authErrorMessages } from "../../utils/errorMessages";
+import { Request, Response, NextFunction } from 'express';
+import { ErrorWithStatus } from '../ErrorHandler';
+import { ClientErrorStatus } from '../../utils/errorStatusCode';
+import { ZodSchema, ZodError } from 'zod';
+import { authErrorMessages } from '../../utils/errorMessages';
 
 const validateBody = (schema: ZodSchema) => {
   return async (req: Request, res: Response, next: NextFunction) => {

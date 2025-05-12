@@ -1,12 +1,12 @@
-import config from "../config";
+import config from '../config';
 
 const emailContent = {
-  welcomeText: "Welcome to IFA-translator registration!",
-  notificationText: "Please click this button to activate your account:",
-  buttonText: "Verify your email",
-  expiryText: "This link expires after 24 hours",
-  email:config.emailUser,
-  address:"IFA Sydney Office"
+  welcomeText: 'Welcome to IFA-translator registration!',
+  notificationText: 'Please click this button to activate your account:',
+  buttonText: 'Verify your email',
+  expiryText: 'This link expires after 24 hours',
+  email: config.emailUser,
+  address: 'IFA Sydney Office',
 };
 
 type EmailTemplate = {
@@ -24,7 +24,7 @@ const emailGenerator = (
   const emailToBeSend: EmailTemplate = {
     from: config.emailUser,
     to: receiverEmail,
-    subject: "Email Verification for your IFA Account",
+    subject: 'Email Verification for your IFA Account',
     html: `<!DOCTYPE html>
 <html lang="en">
 <head>

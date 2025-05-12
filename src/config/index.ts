@@ -11,7 +11,6 @@ const DEFAULT_SWAGGER_DOC_PATH = '/api-docs';
 const DEFAULT_JWT_TOKEN_EXPIRY_IN = '15m';
 const DEFAULT_JWT_SECRET = 'translatorapi_default_secret_key_2024';
 const DEFAULT_GOOGLE_CALLBACK_URL = 'http://localhost:8000/api/v1/users/googleAuth/callback';
-const DEFAULT_LOGIN_CALLBACK_URL = 'http://localhost:3000/login-callback';
 const DEFAULT_EMAIL_ADDRESS = 'ifatranslator@gmail.com';
 const DEFAULT_EMAIL_REDIRECT_URL = 'http://localhost:8000';
 const EMAIL_EXPIRY_TIME = 24 * 60 * 60 * 1000; // in ms unit
@@ -56,7 +55,7 @@ const config: Config = {
   googleSecret: process.env.GOOGLE_CLIENT_SECRET || '',
   googleRedirectUrl: process.env.GOOGLE_CALLBACK_URL || DEFAULT_GOOGLE_CALLBACK_URL,
   sessionSecret: process.env.SESSION_SECRET || '',
-  loginCallBackURL: process.env.LOGIN_CALLBACK || DEFAULT_LOGIN_CALLBACK_URL,
+  loginCallBackURL: `${process.env.APP_URL}/login-callback`,
   emailUser: process.env.EMAIL_USER || DEFAULT_EMAIL_ADDRESS,
   emailPasskey: process.env.EMAIL_PASSKEY as string,
   emailRedirectURL: process.env.EMAIL_REDIRECT_URL || DEFAULT_EMAIL_REDIRECT_URL,
