@@ -36,7 +36,8 @@ const languageEnum = z.enum([
   'id',
   'ms',
 ]);
-
+//Strict international mobile phone number format (7-15 digits)
+const internationalPhoneRegex = /^\+(?:[1-9]\d{0,2})\d{6,12}$/;
 // Auth validation schema using Zod
 const authValidationSchema = {
   // Register schema
@@ -45,8 +46,8 @@ const authValidationSchema = {
       .string()
       .min(3, { message: 'Name must be at least 3 characters long' })
       .max(50, { message: 'Name must not exceed 50 characters' }),
-    mobile: z.string().regex(/^(?:\+61|0)4\d{8}$/, {
-      message: 'Mobile must match Australia standard',
+    mobile: z.string().regex(internationalPhoneRegex, {
+      message: 'Please enter a valid international phone number',
     }),
     language: languageEnum,
     selfDescription: z
@@ -66,8 +67,8 @@ const authValidationSchema = {
       language: languageEnum,
       mobile: z
         .string()
-        .regex(/^(?:\+61|0)4\d{8}$/, {
-          message: 'Mobile must match Australia standard',
+        .regex(internationalPhoneRegex, {
+          message: 'Please enter a valid international phone number',
         })
         .optional(),
       selfDescription: z
