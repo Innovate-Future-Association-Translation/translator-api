@@ -55,7 +55,10 @@ const config: Config = {
   googleSecret: process.env.GOOGLE_CLIENT_SECRET || '',
   googleRedirectUrl: process.env.GOOGLE_CALLBACK_URL || DEFAULT_GOOGLE_CALLBACK_URL,
   sessionSecret: process.env.SESSION_SECRET || '',
-  loginCallBackURL: `${process.env.APP_URL}/login-callback`,
+  loginCallBackURL:
+    process.env.NODE_ENV === 'dev'
+      ? `${process.env.APP_DEV_URL}/login-callback`
+      : `${process.env.APP_URL}/login-callback`,
   emailUser: process.env.EMAIL_USER || DEFAULT_EMAIL_ADDRESS,
   emailPasskey: process.env.EMAIL_PASSKEY as string,
   emailRedirectURL: process.env.EMAIL_REDIRECT_URL || DEFAULT_EMAIL_REDIRECT_URL,
