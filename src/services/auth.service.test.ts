@@ -1,12 +1,21 @@
-// Set JWT_SECRET first to avoid configuration warnings
 process.env.JWT_SECRET = 'testSecret';
 import config from '../config';
 config.jwtSecret = process.env.JWT_SECRET;
 
+jest.mock('../services/email.service', () => ({
+  sendVerificationEmail: jest.fn().mockResolvedValue(undefined),
+}));
+
+jest.mock('../models/VerificationToken', () => ({
+  __esModule: true,
+  default: {
+    create: jest.fn().mockResolvedValue(undefined),
+  },
+}));
+
 import authServices from '../services/auth.service';
 import { User, IUser } from '../models/User';
 import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
 import { authErrorMessages } from '../utils/errorMessages';
 
 class TestError extends Error {
@@ -22,6 +31,7 @@ interface MockUser {
   language: string;
   mobile: string;
   selfDescription: string;
+  activated: boolean;
   save: jest.Mock;
   generateLoginToken: jest.Mock;
   findByCredential?: jest.Mock;
@@ -40,6 +50,7 @@ describe('Auth Service Unit Tests', () => {
     language: 'en',
     mobile: '+61412345678',
     selfDescription: 'I am a test user',
+    activated: true,
     save: jest.fn(),
     generateLoginToken: jest.fn(),
   };
@@ -49,23 +60,17 @@ describe('Auth Service Unit Tests', () => {
     password: 'password123',
   };
 
-  beforeAll(() => {});
-
   beforeEach(() => {
     jest.clearAllMocks();
     mockUserData.save.mockReset();
     mockUserData.generateLoginToken.mockReset();
   });
 
-  afterAll(() => {});
-
   describe('register() - User Registration', () => {
     it('should successfully register a new user', async () => {
       mockUserData.save.mockResolvedValue(mockUserData);
 
-      (User as jest.Mocked<any>).mockImplementation((userData: Partial<IUser>) => {
-        return mockUserData;
-      });
+      (User as jest.Mocked<any>).mockImplementation(() => mockUserData);
 
       await authServices.register(mockUserData as any);
 
@@ -128,12 +133,11 @@ describe('Auth Service Unit Tests', () => {
     it('should log in successfully and return a token', async () => {
       const mockUser = {
         ...mockUserData,
-        findByCredential: jest.fn().mockResolvedValue(mockUserData),
+        activated: true,
+        generateLoginToken: jest.fn().mockReturnValue('mockToken123'),
       };
 
       (User as jest.Mocked<any>).findByCredential = jest.fn().mockResolvedValue(mockUser);
-      mockUser.generateLoginToken.mockReturnValue('mockToken123');
-
       (bcrypt.compare as jest.Mocked<any>).mockResolvedValue(true);
 
       const token = await authServices.login(mockCredentials.email, mockCredentials.password);
@@ -159,8 +163,8 @@ describe('Auth Service Unit Tests', () => {
     it('should handle JWT generation errors', async () => {
       const mockUser = {
         ...mockUserData,
-        findByCredential: jest.fn().mockResolvedValue(mockUserData),
-        generateLoginToken: jest.fn().mockImplementation(() => {
+        activated: true,
+        generateLoginToken: jest.fn(() => {
           throw new Error(authErrorMessages.JWT_TOKEN_GENERATION_ERROR);
         }),
       };
@@ -179,8 +183,8 @@ describe('Auth Service Unit Tests', () => {
 
       const mockUser = {
         ...mockUserData,
-        findByCredential: jest.fn().mockResolvedValue(mockUserData),
-        generateLoginToken: jest.fn().mockImplementation(() => {
+        activated: true,
+        generateLoginToken: jest.fn(() => {
           if (!config.jwtSecret) {
             throw new Error(authErrorMessages.JWT_SECRET_NOT_SET);
           }
