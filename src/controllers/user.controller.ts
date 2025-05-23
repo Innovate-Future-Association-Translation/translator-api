@@ -12,6 +12,7 @@ import { updateProfile } from '../services/user.service';
 import { authSuccessMessage } from '../utils/successMessage';
 import { userProfileMessage } from '../utils/userProfileMessage';
 import config from '../config';
+import { sendForgetPasswordEmail } from '../services/email.service';
 
 export const getUsers = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -249,4 +250,41 @@ export const resendVerificationEmail = async (
   }
 };
 
-export default { getUsers, registerController, loginController, updateProfileController };
+export const requestResetPassword = async (req: Request, res: Response, next: NextFunction) => {
+  const { email } = req.body;
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: 'Email not found' });
+    }
+
+    const token = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+    await VerificationToken.findOneAndUpdate(
+      { userId: user._id },
+      { token, expiresAt },
+      { upsert: true }
+    );
+
+    await sendForgetPasswordEmail(email, token, user.name);
+
+    res.status(200).json({ message: 'Reset email sent successfully' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const userController = {
+  getUsers,
+  registerController,
+  loginController,
+  updateProfileController,
+  getUserProfileController,
+  verifyEmail,
+  resendVerificationEmail,
+  requestResetPassword,
+};
+
+export default userController;
