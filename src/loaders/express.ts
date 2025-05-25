@@ -7,19 +7,31 @@ import swaggerOptions from '../utils/swagger';
 import morgan from 'morgan';
 import helmet from 'helmet';
 import cors from 'cors';
+import { Server } from 'socket.io';
+import { createServer } from 'http';
 import errorHandler from '../middlewares/ErrorHandler';
 import { authErrorMessages } from '../utils/errorMessages';
 import passport from '../middlewares/thirdPartyAuth/passport';
 import session from 'express-session';
+import { socketHandler } from '../socket/socket';
 
 const swaggerSpec = swaggerJSDoc(swaggerOptions);
 
 const startServer = () => {
   const app = express();
-  const allowedOrigins = [
-    process.env.APP_URL,
-    process.env.APP_DEV_URL,
-  ].filter((origin): origin is string => typeof origin === "string");
+  const allowedOrigins = [process.env.APP_URL, process.env.APP_DEV_URL].filter(
+    (origin): origin is string => typeof origin === 'string'
+  );
+  const httpServer = createServer(app);
+  const io = new Server(httpServer, {
+    cors: {
+      origin: allowedOrigins,
+      methods: ['GET', 'POST'],
+      credentials: true,
+    },
+  });
+
+  socketHandler(io);
 
   app.use(
     cors({
@@ -58,12 +70,12 @@ const startServer = () => {
   }
 
   // Start the server
-  const server = app.listen(config.port, () => {
+  httpServer.listen(config.port, () => {
     console.log('SERVER STARTED:', config.port);
   });
 
   // Handle server errors
-  server.on('error', (err: Error) => {
+  httpServer.on('error', (err: Error) => {
     console.error('Server error:', err.message);
     process.exit(1);
   });

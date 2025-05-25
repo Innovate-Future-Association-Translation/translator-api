@@ -4,6 +4,7 @@ import mongoose from 'mongoose';
 import { ErrorWithStatus } from '../middlewares/ErrorHandler';
 import { MeetingErrorStatus } from '../utils/errorStatusCode';
 import { meetingErrorMessage } from '../utils/errorMessages';
+import { SpeechTranscript } from '../models/MeetingRecords';
 
 const createMeetingRoom = async (
   creatorId: mongoose.Types.ObjectId,
@@ -34,6 +35,22 @@ const getParticipantInfo = async (roomId: string): Promise<{ name: string }[] | 
   }));
 };
 
-const meetingRoomServices = { createMeetingRoom, getParticipantInfo };
+const saveInstantMeetingTranscript = async (
+  meetingId: string,
+  speakerName: string,
+  speakerId: string,
+  rawSpeechText: string
+): Promise<void> => {
+  const transcript = new SpeechTranscript({
+    meetingId,
+    speakerName,
+    speakerId,
+    rawSpeechText: rawSpeechText,
+  });
+
+  await transcript.save();
+};
+
+const meetingRoomServices = { createMeetingRoom, getParticipantInfo, saveInstantMeetingTranscript };
 
 export default meetingRoomServices;
