@@ -16,10 +16,9 @@ const swaggerSpec = swaggerJSDoc(swaggerOptions);
 
 const startServer = () => {
   const app = express();
-  const allowedOrigins = [
-    process.env.APP_URL,
-    process.env.APP_DEV_URL,
-  ].filter((origin): origin is string => typeof origin === "string");
+  const allowedOrigins = [process.env.APP_URL, process.env.APP_DEV_URL].filter(
+    (origin): origin is string => typeof origin === 'string'
+  );
 
   app.use(
     cors({
@@ -30,6 +29,7 @@ const startServer = () => {
 
   app.use(morgan('combined'));
   app.use(helmet());
+  app.use(config.api.prefix + '/webhook/stripe', express.raw({ type: 'application/json' }));
   app.use(express.json());
 
   app.use(

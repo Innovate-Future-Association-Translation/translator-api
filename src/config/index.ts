@@ -37,6 +37,11 @@ interface Config {
   emailExpiryTime: number;
   emailTokenByte: number;
   encodingMethod: BufferEncoding;
+  stripe: {
+    secretKey: string;
+    publishableKey: string;
+    webhookSecret: string;
+  };
 }
 
 if (!process.env.JWT_SECRET) {
@@ -65,6 +70,11 @@ const config: Config = {
   emailExpiryTime: EMAIL_EXPIRY_TIME,
   emailTokenByte: EMAIL_TOKEN_RANDOM_BYTE,
   encodingMethod: ENCODING_METHOD || 'hex',
+  stripe: {
+    secretKey: process.env.STRIPE_SECRET_KEY || '',
+    publishableKey: process.env.STRIPE_PUBLISHABLE_KEY || '',
+    webhookSecret: process.env.STRIPE_WEBHOOK_SECRET || '',
+  },
 };
 
 export default config;

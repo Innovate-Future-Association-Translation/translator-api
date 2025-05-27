@@ -1,0 +1,258 @@
+{
+  "info": {
+    "name": "Stripe Subscription API",
+    "description": "IFA Translator Stripe 订阅系统 API 测试集合",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{jwt_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "jwt_token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "用户认证",
+      "item": [
+        {
+          "name": "用户注册",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test User\",\n  \"email\": \"test@example.com\",\n  \"password\": \"password123\",\n  \"language\": \"en\",\n  \"mobile\": \"+61412345678\",\n  \"selfDescription\": \"测试用户\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/users/register",
+              "host": ["{{base_url}}"],
+              "path": ["users", "register"]
+            }
+          }
+        },
+        {
+          "name": "用户登录",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('jwt_token', response.token);",
+                  "    console.log('JWT Token saved:', response.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/users/login",
+              "host": ["{{base_url}}"],
+              "path": ["users", "login"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "订阅管理",
+      "item": [
+        {
+          "name": "检查订阅状态",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/subscriptions/status",
+              "host": ["{{base_url}}"],
+              "path": ["subscriptions", "status"]
+            }
+          }
+        },
+        {
+          "name": "创建 Basic 订阅",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    console.log('=== 支付链接已生成 ===');",
+                  "    console.log('Checkout URL:', response.checkoutUrl);",
+                  "    console.log('');",
+                  "    console.log('下一步操作：');",
+                  "    console.log('1. 复制上面的 Checkout URL');",
+                  "    console.log('2. 在浏览器中打开该 URL');",
+                  "    console.log('3. 使用测试信用卡完成支付: 4242 4242 4242 4242');",
+                  "    console.log('4. 支付完成后，检查 Stripe Dashboard 和数据库');",
+                  "    console.log('5. 如果本地测试，需要使用 Stripe CLI 转发 webhook');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"plan\": \"basic\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/subscriptions/checkout",
+              "host": ["{{base_url}}"],
+              "path": ["subscriptions", "checkout"]
+            }
+          }
+        },
+        {
+          "name": "创建 Premium 订阅",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"plan\": \"premium\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/subscriptions/checkout",
+              "host": ["{{base_url}}"],
+              "path": ["subscriptions", "checkout"]
+            }
+          }
+        },
+        {
+          "name": "创建 Enterprise 订阅",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"plan\": \"enterprise\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/subscriptions/checkout",
+              "host": ["{{base_url}}"],
+              "path": ["subscriptions", "checkout"]
+            }
+          }
+        },
+        {
+          "name": "创建账单门户会话",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/subscriptions/billing-portal",
+              "host": ["{{base_url}}"],
+              "path": ["subscriptions", "billing-portal"]
+            }
+          }
+        },
+        {
+          "name": "取消订阅",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/subscriptions/cancel",
+              "host": ["{{base_url}}"],
+              "path": ["subscriptions", "cancel"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "权限测试",
+      "item": [
+        {
+          "name": "Basic 功能访问",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/basic/features",
+              "host": ["{{base_url}}"],
+              "path": ["basic", "features"]
+            }
+          }
+        },
+        {
+          "name": "Premium 功能访问",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/premium/features",
+              "host": ["{{base_url}}"],
+              "path": ["premium", "features"]
+            }
+          }
+        },
+        {
+          "name": "Enterprise 功能访问",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/enterprise/features",
+              "host": ["{{base_url}}"],
+              "path": ["enterprise", "features"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

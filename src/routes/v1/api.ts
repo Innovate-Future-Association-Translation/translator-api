@@ -15,6 +15,10 @@ import authMiddleware from '../../middlewares/JWT/auth.middleware';
 import passport from '../../middlewares/thirdPartyAuth/passport';
 import { IUser } from '../../models/User';
 import config from '../../config';
+import subscriptionController from '../../controllers/subscription.controller';
+import { handleStripeWebhook } from '../../controllers/webhook.controller';
+import { requireSubscription } from '../../middlewares/subscription/stripe';
+
 const router = express.Router();
 /**
  * @swagger
@@ -468,6 +472,51 @@ const router = express.Router();
  *                     type: string
  *                   example: ["Unexpected server issue."]
  */
+router.post('/webhook/stripe', express.raw({ type: 'application/json' }), handleStripeWebhook);
+
+router.post(
+  '/subscriptions/checkout',
+  authMiddleware,
+  subscriptionController.createCheckoutSession
+);
+
+router.post(
+  '/subscriptions/billing-portal',
+  authMiddleware,
+  subscriptionController.createBillingPortalSession
+);
+
+router.get('/subscriptions/status', authMiddleware, subscriptionController.getSubscriptionStatus);
+
+router.post('/subscriptions/cancel', authMiddleware, subscriptionController.cancelSubscription);
+
+// requireSubscription('') test
+router.get(
+  '/premium/features',
+  authMiddleware,
+  requireSubscription('premium'),
+  (req: Request, res: Response) => {
+    res.json({ message: '这是高级功能，需要 Premium 或更高级别的订阅' });
+  }
+);
+
+router.get(
+  '/basic/features',
+  authMiddleware,
+  requireSubscription('basic'),
+  (req: Request, res: Response) => {
+    res.json({ message: '这是基础功能，需要任何有效订阅' });
+  }
+);
+
+router.get(
+  '/enterprise/features',
+  authMiddleware,
+  requireSubscription('enterprise'),
+  (req: Request, res: Response) => {
+    res.json({ message: '这是企业功能，需要 Enterprise 订阅' });
+  }
+);
 
 router.get('/users', getUsers);
 
@@ -476,7 +525,9 @@ router.post('/users/register', validateBody(authValidationSchema.register), regi
 router.post('/users/login', validateBody(authValidationSchema.login), loginController);
 
 router.get('/users/verify-email', verifyEmail);
+
 router.post('/users/resend-verification', resendVerificationEmail);
+
 router.patch(
   '/users/update',
   authMiddleware,

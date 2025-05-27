@@ -12,6 +12,7 @@ interface IUser extends Document {
   googleId?: string;
   generateLoginToken(): string;
   activated: boolean;
+  stripeCustomerId?: string;
 }
 const UserSchema = new Schema<IUser>({
   name: { type: String, required: true },
@@ -27,6 +28,7 @@ const UserSchema = new Schema<IUser>({
   selfDescription: { type: String },
   googleId: { type: String, default: undefined },
   activated: { type: Boolean, default: false },
+  stripeCustomerId: { type: String, unique: true, sparse: true },
 });
 interface IUserModel extends Model<IUser> {
   findByCredential(email: string, password: string): Promise<IUser | null>;
