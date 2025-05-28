@@ -1,5 +1,5 @@
 import express from 'express';
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import {
   getUsers,
   registerController,
@@ -8,6 +8,7 @@ import {
   getUserProfileController,
   verifyEmail,
   resendVerificationEmail,
+  requestResetPassword,
 } from '../../controllers/user.controller';
 import meetingRoomController from '../../controllers/meetingRoom.controller';
 import validateBody from '../../middlewares/validation/auth.validation';
@@ -497,6 +498,63 @@ const router = express.Router();
  *                   items:
  *                     type: string
  *                   example: ["Unexpected server issue."]
+ * /users/forgot-password:
+ *   post:
+ *     summary: Request a password reset
+ *     description: Sends a password reset link to the user's email if the email is registered.
+ *     tags:
+ *       - Authentication
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: The user's registered email address
+ *                 example: user@example.com
+ *     responses:
+ *       200:
+ *         description: Reset email sent successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Reset email sent successfully
+ *       404:
+ *         description: Email not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Email not found
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 status:
+ *                   type: integer
+ *                   example: 500
+ *                 message:
+ *                   type: string
+ *                   example: Internal Server Error
  * /meetings/createNewRoom:
  *   post:
  *     summary: Create a new meeting room
@@ -629,6 +687,11 @@ router.get(
 router.get('/users/loginFail', (req: Request, res: Response) => {
   res.redirect(`${config.loginCallBackURL}/?authError=${true}`);
 });
+
+router.post(
+  '/users/forgot-password',
+  requestResetPassword as (req: Request, res: Response, next: NextFunction) => Promise<void>
+);
 
 router.post('/meetings/createNewRoom', meetingRoomController.createNewRoomController);
 router.post('/meetings/info', meetingRoomController.getParticipants);
