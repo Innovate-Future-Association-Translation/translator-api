@@ -632,5 +632,6 @@ router.get('/users/loginFail', (req: Request, res: Response) => {
 
 router.post('/meetings/createNewRoom', meetingRoomController.createNewRoomController);
 router.post('/meetings/info', meetingRoomController.getParticipants);
+router.get('/meetings/qr-code/:roomId', meetingRoomController.generateMeetingQRCodeController);
 
 export default router;

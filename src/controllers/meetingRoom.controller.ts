@@ -1,4 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
+import qrcode from 'qrcode';
 import { ErrorWithStatus } from '../middlewares/ErrorHandler';
 import config from '../config';
 import meetingRoomServices from '../services/meetingRoom.service';
@@ -59,5 +60,38 @@ export const getParticipants = async (
   }
 };
 
-const meetingRoomController = { createNewRoomController, getParticipants };
+export const generateMeetingQRCodeController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { roomId } = req.params;
+    if (!roomId) {
+      const err: ErrorWithStatus = new Error(meetingErrorMessage.MISSING_ROOM_ID) as ErrorWithStatus;
+      err.status = MeetingErrorStatus.BAD_REQUEST;
+      throw err;
+    }
+
+    const meetingLink = `${config.instantMeetingRedirectURL}/${roomId}`;
+    const qrCodeDataURL = await qrcode.toDataURL(meetingLink);
+
+    res.status(200).json({
+      message: meetingRoomSuccessMessage.QR_CODE_GENERATED_SUCCESSFULLY,
+      qrCode: qrCodeDataURL,
+      meetingLink: meetingLink,
+    });
+  } catch (error) {
+    const err: ErrorWithStatus = new Error();
+    err.status = MeetingErrorStatus.INTERNAL_SERVER_ERROR;
+    err.message = (error as Error).message || meetingErrorMessage.FAIL_GENERATING_QR_CODE;
+    next(err);
+  }
+};
+
+const meetingRoomController = {
+  createNewRoomController,
+  getParticipants,
+  generateMeetingQRCodeController,
+};
 export default meetingRoomController;
