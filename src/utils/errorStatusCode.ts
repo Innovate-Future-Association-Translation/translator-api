@@ -29,6 +29,7 @@ export enum ClientErrorStatus {
 export enum MeetingErrorStatus {
   BAD_REQUEST = 400,
   ROOM_NOT_FOUND = 404,
+  INTERNAL_SERVER_ERROR = 500,
 }
 
 export enum ServerErrorStatus {
