@@ -7,4 +7,5 @@ export enum authSuccessMessage {
 export enum meetingRoomSuccessMessage {
   CREATE_MEETING_ROOM_SUCCESSFULLY = 'Meeting Room created successful',
   FETCH_PARTICIPANT_SUCCESSFULLY = 'Participants retrieved successfully',
+  QR_CODE_GENERATED_SUCCESSFULLY = 'QR code generated successfully.',
 }

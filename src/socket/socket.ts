@@ -11,7 +11,11 @@ interface userStatus {
   isRaiseHand: boolean;
   isRecognizing?: boolean;
   recognizingText?: string | null;
+  preferredLanguage?: string;
 }
+
+// Add: Map to store each user's language preference in each room
+const userLanguagePreferences = new Map<string, Map<string, string>>();
 
 /*
 IT-42
@@ -45,6 +49,16 @@ export const socketHandler = (io: Server) => {
       socket.join(roomId);
       console.log(`${userInitialStatusData.userName} joined room ${roomId}`);
 
+      // Add: Initialize user language preference map for this room
+      if (!userLanguagePreferences.has(roomId)) {
+        userLanguagePreferences.set(roomId, new Map());
+      }
+      const roomLanguagePrefs = userLanguagePreferences.get(roomId)!;
+      // Set default language preference if not exists
+      if (!roomLanguagePrefs.has(userId)) {
+        roomLanguagePrefs.set(userId, userInitialStatusData.preferredLanguage || 'en');
+      }
+
       /*IT-39 if there is no room id in the room status map(it means there is new meeting room)
       create new status list in the status map
       */
@@ -54,10 +68,14 @@ export const socketHandler = (io: Server) => {
       /*IT-39 found the status via the roomId and push this new user initial state in the status list
        */
       const currentRoomStatus = roomStatusMap.get(roomId)!;
-      currentRoomStatus.push(userInitialStatusData);
+      const userStatusWithLanguage = {
+        ...userInitialStatusData,
+        preferredLanguage: roomLanguagePrefs.get(userId),
+      };
+      currentRoomStatus.push(userStatusWithLanguage);
 
       /*used to broadcast the user initial state to the frontend and the current roomstatus Map to the front end*/
-      io.to(roomId).emit('broadcast-user-join-initial-status', userInitialStatusData);
+      io.to(roomId).emit('broadcast-user-join-initial-status', userStatusWithLanguage);
       console.log(`current room with room id:${roomId} status`, roomStatusMap.get(roomId));
       io.to(roomId).emit('broadcast-current-room-status', roomStatusMap.get(roomId));
       socket.emit('sync-room-status-list', currentRoomStatus);
@@ -94,22 +112,60 @@ export const socketHandler = (io: Server) => {
       console.log('Socket disconnected:', socket.id);
     });
 
-    // used to receive the raw speech text and do personalized translation
-    socket.on('request-translate-for-me', async ({ text, myPreferLanguage }) => {
+    // Add: Handle user language preference updates
+    socket.on('update-user-language-preference', ({ roomId, userId, preferredLanguage }) => {
+      console.log(
+        `User ${userId} in room ${roomId} updated language preference to: ${preferredLanguage}`
+      );
+
+      if (userLanguagePreferences.has(roomId)) {
+        const roomLanguagePrefs = userLanguagePreferences.get(roomId)!;
+        roomLanguagePrefs.set(userId, preferredLanguage);
+
+        // Update user status in room status map
+        if (roomStatusMap.has(roomId)) {
+          const roomStatus = roomStatusMap.get(roomId)!;
+          const updatedRoomStatus = roomStatus.map((user) =>
+            user.userId === userId ? { ...user, preferredLanguage } : user
+          );
+          roomStatusMap.set(roomId, updatedRoomStatus);
+
+          // Broadcast updated room status
+          io.to(roomId).emit('broadcast-current-room-status', updatedRoomStatus);
+        }
+      }
+    });
+
+    // IT-41: Receive raw speech text and perform personalized translation with message tracking
+    socket.on('request-translate-for-me', async ({ messageId, text, myPreferLanguage }) => {
       console.log('text before implement personal-translation', text);
       console.log('user personalize language', myPreferLanguage);
-      const detectedLanguage = await detectLanguage(text);
-      console.log(detectedLanguage);
-      const translatedLanguageData = await languageTranslate(
-        text,
-        detectedLanguage,
-        myPreferLanguage
-      );
-      const [{ translations }] = translatedLanguageData;
-      console.log('personalize translated language:', translations[0].text);
-      socket.emit('personal-translation-result', {
-        translatedText: translations[0].text,
-      });
+      console.log('messageId', messageId);
+
+      try {
+        const detectedLanguage = await detectLanguage(text);
+        console.log(detectedLanguage);
+        const translatedLanguageData = await languageTranslate(
+          text,
+          detectedLanguage,
+          myPreferLanguage
+        );
+        const [{ translations }] = translatedLanguageData;
+        console.log('personalize translated language:', translations[0].text);
+
+        // Send translation result with messageId for accurate message mapping
+        socket.emit('personal-translation-result', {
+          messageId: messageId,
+          translatedText: translations[0].text,
+        });
+      } catch (error) {
+        console.error('Translation error:', error);
+        // On failure, return original text with messageId
+        socket.emit('personal-translation-result', {
+          messageId: messageId,
+          translatedText: text,
+        });
+      }
     });
   });
 };
