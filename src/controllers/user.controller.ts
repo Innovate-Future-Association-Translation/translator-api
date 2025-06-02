@@ -1,18 +1,21 @@
-import { User, IUser } from "../models/User";
-import { NextFunction, Request, Response } from "express";
-import { ErrorWithStatus } from "../middlewares/ErrorHandler";
-import { ClientErrorStatus } from "../utils/errorStatusCode";
-import authServices from "../services/auth.service";
-import { updateProfile } from "../services/user.service";
-import { authErrorMessages } from "../utils/errorMessages";
-import { authSuccessMessage } from "../utils/successMessage";
-import { userProfileMessage } from "../utils/userProfileMessame";
+import { User, IUser } from '../models/User';
+import VerificationToken from '../models/VerificationToken';
+import { NextFunction, Request, Response } from 'express';
+import { ErrorWithStatus } from '../middlewares/ErrorHandler';
+import { ClientErrorStatus } from '../utils/errorStatusCode';
 
-export const getUsers = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
+import { authErrorMessages, ServeErrorMessage } from '../utils/errorMessages';
+import crypto from 'crypto';
+import { sendVerificationEmail } from '../services/email.service';
+import authServices from '../services/auth.service';
+import { updateProfile } from '../services/user.service';
+import { authSuccessMessage } from '../utils/successMessage';
+import { userProfileMessage } from '../utils/userProfileMessage';
+
+import config from '../config';
+import { sendForgetPasswordEmail } from '../services/email.service';
+
+export const getUsers = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const users = await User.find();
     res.status(200).json(users);
@@ -30,14 +33,10 @@ export const registerController = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const userData = req.body;
-    const { name, email, password, mobile, language, selfDescription } =
-      req.body;
+    const { name, email, password, mobile, language, selfDescription } = req.body;
 
     if (!name || !email || !password || !language) {
-      const error: ErrorWithStatus = new Error(
-        authErrorMessages.MISSING_REGISTRATION_FIELD
-      );
+      const error: ErrorWithStatus = new Error(authErrorMessages.MISSING_REGISTRATION_FIELD);
       error.status = ClientErrorStatus.BAD_REQUEST;
       return next(error);
     }
@@ -50,9 +49,7 @@ export const registerController = async (
       language,
       selfDescription,
     } as IUser);
-    res
-      .status(201)
-      .json({ message: authSuccessMessage.REGISTER_SUCCESSFULLY, name: name });
+    res.status(201).json({ message: authSuccessMessage.REGISTER_SUCCESSFULLY, name: name });
   } catch (error: any) {
     const err: ErrorWithStatus = new Error();
     err.status = error.status || ClientErrorStatus.BAD_REQUEST;
@@ -70,28 +67,26 @@ export const loginController = async (
   try {
     const token = await authServices.login(email, password);
 
-    res.json({
-      message: authSuccessMessage.LOGIN_SUCCESSFULLY,
-      token: token,
+    res.status(200).json({
+      message: 'Login successful',
+      token,
+      redirectUrl: `${config.loginCallBackURL}?token=${token}`,
     });
-  } catch (e : any) {
+  } catch (e: any) {
     const err: ErrorWithStatus = new Error();
     err.status = ClientErrorStatus.UNAUTHORIZED;
     err.message = e.message;
     next(err);
-    
+
     next(e); // Pass the error to the error handler
   }
 };
-
-
 
 export const getUserProfileController = async (
   req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
-  
   try {
     if (!req.user || !req.user.id) {
       const error: ErrorWithStatus = new Error(authErrorMessages.UNAUTHORIZED_ACCESS);
@@ -108,20 +103,18 @@ export const getUserProfileController = async (
     res.status(200).json({
       name: user.name,
       email: user.email,
-      mobile:user.mobile,
-      language:user.language,
-      selfDescription:user.selfDescription
-      
+      mobile: user.mobile,
+      language: user.language,
+      selfDescription: user.selfDescription,
+      id: user.id,
     });
   } catch (error) {
     const err: ErrorWithStatus = new Error(authErrorMessages.FETCH_USER_ERROR);
+    err.message = (error as Error).message;
     err.status = ClientErrorStatus.NOT_FOUND;
     next(err);
   }
-
-
-}
-
+};
 
 export const updateProfileController = async (
   req: Request,
@@ -130,7 +123,7 @@ export const updateProfileController = async (
 ): Promise<void> => {
   try {
     const userId = req.user?.id;
-    
+
     if (!userId) {
       const error: ErrorWithStatus = new Error(authErrorMessages.UNAUTHORIZED_ACCESS);
       error.status = ClientErrorStatus.UNAUTHORIZED;
@@ -138,26 +131,26 @@ export const updateProfileController = async (
     }
 
     const { name, language, mobile, selfDescription } = req.body;
-    
+
     if (!language) {
       const error: ErrorWithStatus = new Error(authErrorMessages.MISSING_REGISTRATION_FIELD);
       error.status = ClientErrorStatus.BAD_REQUEST;
       return next(error);
     }
-    
+
     // make sure updated data is useful
     if (name && name.trim() === '') {
       const error: ErrorWithStatus = new Error(authErrorMessages.MISSING_REGISTRATION_FIELD);
       error.status = ClientErrorStatus.BAD_REQUEST;
       return next(error);
     }
-    
+
     if (mobile && mobile.trim() === '') {
       const error: ErrorWithStatus = new Error(authErrorMessages.MISSING_REGISTRATION_FIELD);
       error.status = ClientErrorStatus.BAD_REQUEST;
       return next(error);
     }
-    
+
     if (selfDescription && selfDescription.trim() === '') {
       const error: ErrorWithStatus = new Error(authErrorMessages.MISSING_REGISTRATION_FIELD);
       error.status = ClientErrorStatus.BAD_REQUEST;
@@ -168,7 +161,7 @@ export const updateProfileController = async (
       name,
       language,
       mobile,
-      selfDescription
+      selfDescription,
     });
 
     if (!updatedUser) {
@@ -184,12 +177,112 @@ export const updateProfileController = async (
         email: updatedUser.email,
         language: updatedUser.language,
         mobile: updatedUser.mobile,
-        selfDescription: updatedUser.selfDescription
-      }
+        selfDescription: updatedUser.selfDescription,
+      },
     });
   } catch (error) {
     next(error);
   }
 };
 
-export default { getUsers, registerController, loginController, updateProfileController };
+export const verifyEmail = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { token } = req.query;
+    const verification = await VerificationToken.findOne({ token });
+
+    if (!verification) {
+      res.status(400).json({ message: authErrorMessages.INVALID_VERIFICATION_LINK });
+      return;
+    }
+
+    if (new Date() > verification.expiresAt) {
+      res.status(400).json({ message: authErrorMessages.EXPIRED_VERIFICATION_LINK });
+    }
+
+    await User.findByIdAndUpdate(verification.userId, { activated: true });
+    await VerificationToken.deleteOne({ token });
+
+    res.status(200).json({ message: authSuccessMessage.EMAIL_VERIFY_SUCCESSFULLY });
+  } catch (error: any) {
+    const err: ErrorWithStatus = new Error();
+    err.status = ClientErrorStatus.BAD_REQUEST;
+    err.message = (error as Error).message;
+    next(error);
+  }
+};
+
+export const resendVerificationEmail = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      res.status(404).json({ message: authErrorMessages.INVALID_CREDENTIALS });
+      return;
+    }
+
+    if (user.activated)
+      res.status(400).json({ message: authErrorMessages.EMAIL_ALREADY_REGISTERED });
+
+    const token = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+    await VerificationToken.findOneAndUpdate(
+      { userId: user._id },
+      { token, expiresAt },
+      { upsert: true }
+    );
+
+    await sendVerificationEmail(email, token, user.name);
+
+    res.status(200).json({ message: authSuccessMessage.EMAIL_RESEND_SUCCESSFULLY });
+  } catch (error: any) {
+    res.status(500).json({
+      message: ServeErrorMessage.INTERNAL_SERVER_ERROR,
+      error: error.message,
+    });
+  }
+};
+
+export const requestResetPassword = async (req: Request, res: Response, next: NextFunction) => {
+  const { email } = req.body;
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: 'Email not found' });
+    }
+
+    const token = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+    await VerificationToken.findOneAndUpdate(
+      { userId: user._id },
+      { token, expiresAt },
+      { upsert: true }
+    );
+
+    await sendForgetPasswordEmail(email, token, user.name);
+
+    res.status(200).json({ message: 'Reset email sent successfully' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const userController = {
+  getUsers,
+  registerController,
+  loginController,
+  updateProfileController,
+  getUserProfileController,
+  verifyEmail,
+  resendVerificationEmail,
+  requestResetPassword,
+};
+
+export default userController;
