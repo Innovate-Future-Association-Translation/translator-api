@@ -60,6 +60,27 @@ export const getParticipants = async (
   }
 };
 
+export const getMeetingCreator = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { roomId } = req.body;
+    const creator = await meetingRoomServices.getMeetingCreatorId(roomId);
+
+    res.status(200).json({
+      message: meetingRoomSuccessMessage.FETCH_Creator_SUCCESSFULLY,
+      creator, //{id:string}
+    });
+  } catch (error) {
+    const err: ErrorWithStatus = new Error();
+    err.status = MeetingErrorStatus.BAD_REQUEST;
+    err.message = (error as Error).message;
+    next(err);
+  }
+};
+
 export const generateMeetingQRCodeController = async (
   req: Request,
   res: Response,
@@ -68,7 +89,9 @@ export const generateMeetingQRCodeController = async (
   try {
     const { roomId } = req.params;
     if (!roomId) {
-      const err: ErrorWithStatus = new Error(meetingErrorMessage.MISSING_ROOM_ID) as ErrorWithStatus;
+      const err: ErrorWithStatus = new Error(
+        meetingErrorMessage.MISSING_ROOM_ID
+      ) as ErrorWithStatus;
       err.status = MeetingErrorStatus.BAD_REQUEST;
       throw err;
     }
@@ -93,5 +116,6 @@ const meetingRoomController = {
   createNewRoomController,
   getParticipants,
   generateMeetingQRCodeController,
+  getMeetingCreator,
 };
 export default meetingRoomController;
