@@ -695,5 +695,7 @@ router.post(
 
 router.post('/meetings/createNewRoom', meetingRoomController.createNewRoomController);
 router.post('/meetings/info', meetingRoomController.getParticipants);
+router.get('/meetings/qr-code/:roomId', meetingRoomController.generateMeetingQRCodeController);
+router.post('/meetings/get-meeting-creator', meetingRoomController.getMeetingCreator);
 
 export default router;

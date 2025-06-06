@@ -39,4 +39,6 @@ export enum meetingErrorMessage {
   MISSING_CREATOR_ID = 'missing creator id',
   ROOM_NOT_FOUND = 'meeting room not found or invalid',
   CANNOT_SAVE_TRANSCRIPT = 'fail to save meeting transcript',
+  MISSING_ROOM_ID = 'Room ID is missing.',
+  FAIL_GENERATING_QR_CODE = 'Failed to generate QR code.',
 }

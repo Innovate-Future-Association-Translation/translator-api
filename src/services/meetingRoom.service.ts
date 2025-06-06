@@ -51,6 +51,38 @@ const saveInstantMeetingTranscript = async (
   await transcript.save();
 };
 
-const meetingRoomServices = { createMeetingRoom, getParticipantInfo, saveInstantMeetingTranscript };
+const getMeetingCreatorId = async (roomId: string): Promise<{ id: string } | undefined> => {
+  const meetingRoom = await MeetingRoom.findById(roomId).exec();
+  if (!meetingRoom) {
+    const err: ErrorWithStatus = new Error(meetingErrorMessage.ROOM_NOT_FOUND) as ErrorWithStatus;
+    err.status = MeetingErrorStatus.ROOM_NOT_FOUND;
+    throw err;
+  }
+
+  return { id: meetingRoom.creator.toString() };
+};
+
+const addParticipantToDataBase = async (
+  meetingId: string,
+  participantId: string
+): Promise<void> => {
+  await MeetingRoom.findByIdAndUpdate(
+    meetingId,
+    {
+      $addToSet: {
+        participant: new mongoose.Types.ObjectId(participantId),
+      },
+    },
+    { new: true }
+  );
+};
+
+const meetingRoomServices = {
+  createMeetingRoom,
+  getParticipantInfo,
+  saveInstantMeetingTranscript,
+  getMeetingCreatorId,
+  addParticipantToDataBase,
+};
 
 export default meetingRoomServices;

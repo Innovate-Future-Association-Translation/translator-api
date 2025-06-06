@@ -29,7 +29,7 @@ export const socketHandler = (io: Server) => {
   io.on('connection', (socket: Socket) => {
     console.log('Socket connected:', socket.id);
 
-    socket.on('join-room', ({ roomId, userInitialStatusData }) => {
+    socket.on('join-room', async ({ roomId, userInitialStatusData }) => {
       const userId = userInitialStatusData.userId;
 
       if (!roomUsersMap.has(roomId)) {
@@ -42,6 +42,7 @@ export const socketHandler = (io: Server) => {
         return;
       }
       roomUsers.add(userId);
+      await meetingRoomServices.addParticipantToDataBase(roomId, userId);
       socket.join(roomId);
       console.log(`${userInitialStatusData.userName} joined room ${roomId}`);
 
@@ -61,6 +62,7 @@ export const socketHandler = (io: Server) => {
       console.log(`current room with room id:${roomId} status`, roomStatusMap.get(roomId));
       io.to(roomId).emit('broadcast-current-room-status', roomStatusMap.get(roomId));
       socket.emit('sync-room-status-list', currentRoomStatus);
+      io.to(roomId).emit('sync-room-participants-number', roomUsersMap.get(roomId)?.size);
     });
 
     socket.on('speech-text', async ({ roomId, text, user }) => {
