@@ -6,6 +6,7 @@ import meetingRoomServices from '../services/meetingRoom.service';
 import { meetingErrorMessage } from '../utils/errorMessages';
 import { meetingRoomSuccessMessage } from '../utils/successMessage';
 import { MeetingErrorStatus } from '../utils/errorStatusCode';
+import { historyRecordsRetranslation } from '../services/histroy-records-retranslation-service';
 
 export const createNewRoomController = async (
   req: Request,
@@ -112,10 +113,53 @@ export const generateMeetingQRCodeController = async (
   }
 };
 
+export const getMeetingRecordsController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { roomId } = req.body;
+    const meetingRecordArray =
+      await meetingRoomServices.fetchRawSpeechRecordsViaMeetingRoomID(roomId);
+
+    res.status(200).json({
+      message: meetingRoomSuccessMessage.FETCH_Creator_SUCCESSFULLY,
+      meetingRecordArray,
+    });
+  } catch (error) {
+    const err: ErrorWithStatus = new Error();
+    err.status = MeetingErrorStatus.INTERNAL_SERVER_ERROR;
+    err.message = (error as Error).message;
+    next(err);
+  }
+};
+
+export const reTranslateAllHistoryController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { roomId, to } = req.body;
+    const newTranslationResponse = await historyRecordsRetranslation(roomId, to);
+    res.status(200).json({
+      newTranslationForHistoryTranscript: newTranslationResponse,
+    });
+  } catch (error) {
+    const err: ErrorWithStatus = new Error();
+    err.status = MeetingErrorStatus.INTERNAL_SERVER_ERROR;
+    err.message = (error as Error).message;
+    next(err);
+  }
+};
+
 const meetingRoomController = {
   createNewRoomController,
   getParticipants,
   generateMeetingQRCodeController,
   getMeetingCreator,
+  getMeetingRecordsController,
+  reTranslateAllHistoryController,
 };
 export default meetingRoomController;

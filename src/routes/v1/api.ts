@@ -697,5 +697,13 @@ router.post('/meetings/createNewRoom', meetingRoomController.createNewRoomContro
 router.post('/meetings/info', meetingRoomController.getParticipants);
 router.get('/meetings/qr-code/:roomId', meetingRoomController.generateMeetingQRCodeController);
 router.post('/meetings/get-meeting-creator', meetingRoomController.getMeetingCreator);
+router.post(
+  '/meetings/fetch-meeting-history-records',
+  meetingRoomController.getMeetingRecordsController
+);
+router.post(
+  '/meetings/history-speech-retranslation',
+  meetingRoomController.reTranslateAllHistoryController
+);
 
 export default router;
