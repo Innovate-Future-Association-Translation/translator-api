@@ -4,7 +4,7 @@ import mongoose from 'mongoose';
 import { ErrorWithStatus } from '../middlewares/ErrorHandler';
 import { MeetingErrorStatus } from '../utils/errorStatusCode';
 import { meetingErrorMessage } from '../utils/errorMessages';
-import { SpeechTranscript } from '../models/MeetingRecords';
+import { SpeechTranscript, ISpeechTranscript } from '../models/MeetingRecords';
 
 const createMeetingRoom = async (
   creatorId: mongoose.Types.ObjectId,
@@ -76,6 +76,13 @@ const addParticipantToDataBase = async (
     { new: true }
   );
 };
+const fetchRawSpeechRecordsViaMeetingRoomID = async (meetingId: string): Promise<string[]> => {
+  const historyRecords = await SpeechTranscript.find({
+    meetingId: new mongoose.Types.ObjectId(meetingId),
+  }).sort({ createdAt: 1 });
+
+  return historyRecords.map((record: ISpeechTranscript) => record.rawSpeechText);
+};
 
 const meetingRoomServices = {
   createMeetingRoom,
@@ -83,6 +90,7 @@ const meetingRoomServices = {
   saveInstantMeetingTranscript,
   getMeetingCreatorId,
   addParticipantToDataBase,
+  fetchRawSpeechRecordsViaMeetingRoomID,
 };
 
 export default meetingRoomServices;
