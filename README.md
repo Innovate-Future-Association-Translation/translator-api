@@ -28,7 +28,7 @@ JWT_SECRET=aQuickBrownFoxJumpAwayALazyDog
 
 
 ##### Execute Your Project
-- npm install
+- npm i
 - npm run dev
   -- if there is package have not been installed in the project, follow terminal to complete the installation
 - if you see Server and database initialized successfully the server was started.
